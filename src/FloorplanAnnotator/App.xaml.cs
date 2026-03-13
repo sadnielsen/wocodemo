@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows;
+using FloorplanAnnotator.Converters;
 using FloorplanAnnotator.Services;
 using FloorplanAnnotator.ViewModels;
 
@@ -11,6 +12,11 @@ namespace FloorplanAnnotator;
 /// </summary>
 public partial class App : Application
 {
+    public App()
+    {
+        Resources["BoolToVisConverter"] = new BoolToVisibilityConverter();
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
