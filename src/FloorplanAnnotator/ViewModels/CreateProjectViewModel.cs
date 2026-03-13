@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows.Input;
 using FloorplanAnnotator.Commands;
 using FloorplanAnnotator.Models;
+using FloorplanAnnotator.Resources;
 using FloorplanAnnotator.Services;
 using Microsoft.Win32;
 
@@ -72,8 +73,8 @@ namespace FloorplanAnnotator.ViewModels
         {
             var dialog = new OpenFileDialog
             {
-                Title = "Select Floorplan Image",
-                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif|All Files|*.*",
+                Title = Strings.BrowseFloorplan_DialogTitle,
+                Filter = Strings.BrowseFloorplan_Filter,
                 CheckFileExists = true
             };
 
@@ -88,8 +89,8 @@ namespace FloorplanAnnotator.ViewModels
         {
             var dialog = new OpenFileDialog
             {
-                Title = "Select Annotations File",
-                Filter = "JSON Files|*.json|All Files|*.*",
+                Title = Strings.BrowseAnnotations_DialogTitle,
+                Filter = Strings.BrowseAnnotations_Filter,
                 CheckFileExists = true
             };
 
@@ -113,13 +114,13 @@ namespace FloorplanAnnotator.ViewModels
 
             if (!File.Exists(FloorplanPath))
             {
-                ErrorMessage = "Floorplan file does not exist.";
+                ErrorMessage = Strings.Error_FloorplanNotFound;
                 return;
             }
 
             if (!File.Exists(AnnotationsPath))
             {
-                ErrorMessage = "Annotations file does not exist.";
+                ErrorMessage = Strings.Error_AnnotationsNotFound;
                 return;
             }
 

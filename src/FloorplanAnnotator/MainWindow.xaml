@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:FloorplanAnnotator.Views"
+        xmlns:res="clr-namespace:FloorplanAnnotator.Resources"
         mc:Ignorable="d"
-        Title="Floorplan Annotator"
+        Title="{x:Static res:Strings.MainWindow_Title}"
         Height="700"
         Width="1100"
         MinHeight="500"
@@ -26,19 +27,19 @@
         <ToolBar Grid.Row="0" Background="#F5F5F5">
             <Button Command="{Binding NewProjectCommand}"
                     Padding="10,4"
-                    ToolTip="Create a new project">
+                    ToolTip="{x:Static res:Strings.Toolbar_NewProject_Tooltip}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#x2795;" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="New Project" VerticalAlignment="Center" />
+                    <TextBlock Text="{x:Static res:Strings.Toolbar_NewProject}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Separator />
             <Button Command="{Binding DeleteProjectCommand}"
                     Padding="10,4"
-                    ToolTip="Delete selected project">
+                    ToolTip="{x:Static res:Strings.Toolbar_Delete_Tooltip}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#x1F5D1;" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="Delete" VerticalAlignment="Center" />
+                    <TextBlock Text="{x:Static res:Strings.Toolbar_Delete}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </ToolBar>
@@ -57,7 +58,7 @@
                         Background="#EBEBEB"
                         BorderBrush="#CCCCCC"
                         BorderThickness="0,0,0,1">
-                    <TextBlock Text="Projects"
+                    <TextBlock Text="{x:Static res:Strings.Projects_Header}"
                                FontWeight="Bold"
                                FontSize="13"
                                Padding="8,6" />
@@ -98,7 +99,7 @@
 
                 <!-- Empty state message -->
                 <TextBlock Grid.Row="0"
-                           Text="Select or create a project to view the floorplan."
+                           Text="{x:Static res:Strings.Canvas_EmptyState}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Foreground="#888888"
@@ -130,7 +131,7 @@
                             BorderThickness="0,1,0,1"
                             Visibility="{Binding HasSelectedProject,
                                 Converter={StaticResource BoolToVisConverter}}">
-                        <TextBlock Text="Annotations"
+                        <TextBlock Text="{x:Static res:Strings.Annotations_Header}"
                                    FontWeight="Bold"
                                    FontSize="12"
                                    Padding="8,4" />
@@ -145,10 +146,10 @@
                               Visibility="{Binding HasSelectedProject,
                                   Converter={StaticResource BoolToVisConverter}}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="*" />
-                            <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="90" />
-                            <DataGridTextColumn Header="Coordinates" Binding="{Binding Coordinates}" Width="*" />
-                            <DataGridTemplateColumn Header="Color" Width="60">
+                            <DataGridTextColumn Header="{x:Static res:Strings.Grid_Column_Label}" Binding="{Binding Label}" Width="*" />
+                            <DataGridTextColumn Header="{x:Static res:Strings.Grid_Column_Type}" Binding="{Binding Type}" Width="90" />
+                            <DataGridTextColumn Header="{x:Static res:Strings.Grid_Column_Coordinates}" Binding="{Binding Coordinates}" Width="*" />
+                            <DataGridTemplateColumn Header="{x:Static res:Strings.Grid_Column_Color}" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Background="{Binding Color}"

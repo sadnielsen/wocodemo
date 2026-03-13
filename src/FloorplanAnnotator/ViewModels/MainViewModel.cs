@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Input;
 using FloorplanAnnotator.Commands;
 using FloorplanAnnotator.Models;
+using FloorplanAnnotator.Resources;
 using FloorplanAnnotator.Services;
 using FloorplanAnnotator.Views;
 
@@ -17,7 +18,7 @@ namespace FloorplanAnnotator.ViewModels
         private readonly IProjectRepository _repository;
         private Project? _selectedProject;
         private bool _isLoading;
-        private string _statusMessage = "Ready";
+        private string _statusMessage = Strings.Status_Ready;
 
         public ObservableCollection<Project> Projects { get; } = new();
 
@@ -70,7 +71,7 @@ namespace FloorplanAnnotator.ViewModels
         private async Task LoadProjectsAsync()
         {
             IsLoading = true;
-            StatusMessage = "Loading projects...";
+            StatusMessage = Strings.Status_LoadingProjects;
             try
             {
                 var projects = await _repository.GetAllProjectsAsync();
@@ -78,11 +79,11 @@ namespace FloorplanAnnotator.ViewModels
                 foreach (var p in projects)
                     Projects.Add(p);
 
-                StatusMessage = $"{Projects.Count} project(s) loaded.";
+                StatusMessage = string.Format(Strings.Status_ProjectsLoaded, Projects.Count);
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error loading projects: {ex.Message}";
+                StatusMessage = string.Format(Strings.Status_ErrorLoading, ex.Message);
             }
             finally
             {
@@ -107,7 +108,7 @@ namespace FloorplanAnnotator.ViewModels
         private async Task SaveNewProjectAsync(Project project)
         {
             IsLoading = true;
-            StatusMessage = "Saving project...";
+            StatusMessage = Strings.Status_SavingProject;
             try
             {
                 var saved = await _repository.AddProjectAsync(project);
@@ -115,14 +116,14 @@ namespace FloorplanAnnotator.ViewModels
                 {
                     Projects.Insert(0, saved);
                     SelectedProject = saved;
-                    StatusMessage = $"Project '{saved.Name}' created successfully.";
+                    StatusMessage = string.Format(Strings.Status_ProjectCreated, saved.Name);
                 });
             }
             catch (Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    StatusMessage = $"Error saving project: {ex.Message}";
+                    StatusMessage = string.Format(Strings.Status_ErrorSaving, ex.Message);
                 });
             }
             finally
@@ -136,8 +137,8 @@ namespace FloorplanAnnotator.ViewModels
             if (_selectedProject == null) return;
 
             var result = MessageBox.Show(
-                $"Are you sure you want to delete project '{_selectedProject.Name}'?",
-                "Delete Project",
+                string.Format(Strings.DeleteProject_Confirm, _selectedProject.Name),
+                Strings.DeleteProject_Title,
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
 
@@ -150,7 +151,7 @@ namespace FloorplanAnnotator.ViewModels
         private async Task DeleteProjectAsync(int id)
         {
             IsLoading = true;
-            StatusMessage = "Deleting project...";
+            StatusMessage = Strings.Status_DeletingProject;
             try
             {
                 await _repository.DeleteProjectAsync(id);
@@ -163,14 +164,14 @@ namespace FloorplanAnnotator.ViewModels
                     if (SelectedProject?.Id == id)
                         SelectedProject = null;
 
-                    StatusMessage = "Project deleted.";
+                    StatusMessage = Strings.Status_ProjectDeleted;
                 });
             }
             catch (Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    StatusMessage = $"Error deleting project: {ex.Message}";
+                    StatusMessage = string.Format(Strings.Status_ErrorDeleting, ex.Message);
                 });
             }
             finally
