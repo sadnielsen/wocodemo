@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -15,7 +14,9 @@ namespace FloorplanAnnotator.Views
 {
     public partial class AnnotationCanvas : UserControl
     {
-        // Dependency property: path to the floorplan image
+        private double _imageWidth = 800;
+        private double _imageHeight = 600;
+
         public static readonly DependencyProperty FloorplanPathProperty =
             DependencyProperty.Register(
                 nameof(FloorplanPath),
@@ -23,11 +24,10 @@ namespace FloorplanAnnotator.Views
                 typeof(AnnotationCanvas),
                 new PropertyMetadata(null, OnFloorplanChanged));
 
-        // Dependency property: list of annotations to render
         public static readonly DependencyProperty AnnotationsProperty =
             DependencyProperty.Register(
                 nameof(Annotations),
-                typeof(ObservableCollection<Annotation>),
+                typeof(ObservableCollection<AnnotationRevision>),
                 typeof(AnnotationCanvas),
                 new PropertyMetadata(null, OnAnnotationsChanged));
 
@@ -37,9 +37,9 @@ namespace FloorplanAnnotator.Views
             set => SetValue(FloorplanPathProperty, value);
         }
 
-        public ObservableCollection<Annotation>? Annotations
+        public ObservableCollection<AnnotationRevision>? Annotations
         {
-            get => (ObservableCollection<Annotation>?)GetValue(AnnotationsProperty);
+            get => (ObservableCollection<AnnotationRevision>?)GetValue(AnnotationsProperty);
             set => SetValue(AnnotationsProperty, value);
         }
 
@@ -65,8 +65,9 @@ namespace FloorplanAnnotator.Views
             FloorplanCanvas.Children.Clear();
             FloorplanImage.Source = null;
 
-            // Load floorplan image
-            double imgWidth = 800, imgHeight = 600;
+            _imageWidth = 800;
+            _imageHeight = 600;
+
             if (!string.IsNullOrEmpty(FloorplanPath) && File.Exists(FloorplanPath))
             {
                 try
@@ -81,29 +82,29 @@ namespace FloorplanAnnotator.Views
                     FloorplanImage.Source = bmp;
                     FloorplanImage.Width = bmp.PixelWidth;
                     FloorplanImage.Height = bmp.PixelHeight;
-                    imgWidth = bmp.PixelWidth;
-                    imgHeight = bmp.PixelHeight;
+
+                    _imageWidth = bmp.PixelWidth;
+                    _imageHeight = bmp.PixelHeight;
                 }
                 catch
                 {
-                    // Image load failed; canvas stays empty
                 }
             }
 
             FloorplanCanvas.Children.Add(FloorplanImage);
-            FloorplanCanvas.Width = imgWidth;
-            FloorplanCanvas.Height = imgHeight;
+            FloorplanCanvas.Width = _imageWidth;
+            FloorplanCanvas.Height = _imageHeight;
 
-            // Draw annotations
-            if (Annotations == null) return;
+            if (Annotations == null)
+                return;
 
-            foreach (var annotation in Annotations)
+            foreach (var annotation in Annotations.Where(a => !a.IsDeleted))
             {
                 DrawAnnotation(annotation);
             }
         }
 
-        private void DrawAnnotation(Annotation annotation)
+        private void DrawAnnotation(AnnotationRevision annotation)
         {
             var brush = ParseBrush(annotation.Color);
 
@@ -124,14 +125,15 @@ namespace FloorplanAnnotator.Views
             }
         }
 
-        private void DrawRectangle(Annotation annotation, SolidColorBrush brush)
+        private void DrawRectangle(AnnotationRevision annotation, SolidColorBrush brush)
         {
-            var parts = ParseCoords(annotation.Coordinates);
+            var parts = ParseCoords(annotation.NormalizedCoordinates);
             if (parts.Length < 4) return;
 
-            double x = parts[0], y = parts[1], w = parts[2] - parts[0], h = parts[3] - parts[1];
-            if (w < 0) { x += w; w = -w; }
-            if (h < 0) { y += h; h = -h; }
+            double x = parts[0] * _imageWidth;
+            double y = parts[1] * _imageHeight;
+            double w = parts[2] * _imageWidth;
+            double h = parts[3] * _imageHeight;
 
             var rect = new Rectangle
             {
@@ -141,6 +143,7 @@ namespace FloorplanAnnotator.Views
                 StrokeThickness = 2,
                 Fill = new SolidColorBrush(brush.Color) { Opacity = 0.15 }
             };
+
             Canvas.SetLeft(rect, x);
             Canvas.SetTop(rect, y);
             FloorplanCanvas.Children.Add(rect);
@@ -148,10 +151,10 @@ namespace FloorplanAnnotator.Views
             AddLabel(annotation.Label, x, y, brush);
         }
 
-        private void DrawPolygon(Annotation annotation, SolidColorBrush brush)
+        private void DrawPolygon(AnnotationRevision annotation, SolidColorBrush brush)
         {
-            var parts = ParseCoords(annotation.Coordinates);
-            if (parts.Length < 4 || parts.Length % 2 != 0) return;
+            var parts = ParseCoords(annotation.NormalizedCoordinates);
+            if (parts.Length < 6 || parts.Length % 2 != 0) return;
 
             var polygon = new Polygon
             {
@@ -161,7 +164,11 @@ namespace FloorplanAnnotator.Views
             };
 
             for (int i = 0; i < parts.Length - 1; i += 2)
-                polygon.Points.Add(new Point(parts[i], parts[i + 1]));
+            {
+                polygon.Points.Add(new Point(
+                    parts[i] * _imageWidth,
+                    parts[i + 1] * _imageHeight));
+            }
 
             FloorplanCanvas.Children.Add(polygon);
 
@@ -169,12 +176,13 @@ namespace FloorplanAnnotator.Views
                 AddLabel(annotation.Label, polygon.Points[0].X, polygon.Points[0].Y, brush);
         }
 
-        private void DrawPoint(Annotation annotation, SolidColorBrush brush)
+        private void DrawPoint(AnnotationRevision annotation, SolidColorBrush brush)
         {
-            var parts = ParseCoords(annotation.Coordinates);
+            var parts = ParseCoords(annotation.NormalizedCoordinates);
             if (parts.Length < 2) return;
 
-            double x = parts[0], y = parts[1];
+            double x = parts[0] * _imageWidth;
+            double y = parts[1] * _imageHeight;
             const double radius = 5;
 
             var ellipse = new Ellipse
@@ -185,6 +193,7 @@ namespace FloorplanAnnotator.Views
                 Stroke = Brushes.White,
                 StrokeThickness = 1
             };
+
             Canvas.SetLeft(ellipse, x - radius);
             Canvas.SetTop(ellipse, y - radius);
             FloorplanCanvas.Children.Add(ellipse);
@@ -192,11 +201,13 @@ namespace FloorplanAnnotator.Views
             AddLabel(annotation.Label, x + radius + 2, y - radius, brush);
         }
 
-        private void DrawLabel(Annotation annotation, SolidColorBrush brush)
+        private void DrawLabel(AnnotationRevision annotation, SolidColorBrush brush)
         {
-            var parts = ParseCoords(annotation.Coordinates);
-            double x = parts.Length >= 1 ? parts[0] : 0;
-            double y = parts.Length >= 2 ? parts[1] : 0;
+            var parts = ParseCoords(annotation.NormalizedCoordinates);
+
+            double x = parts.Length >= 1 ? parts[0] * _imageWidth : 0;
+            double y = parts.Length >= 2 ? parts[1] * _imageHeight : 0;
+
             AddLabel(annotation.Label, x, y, brush);
         }
 
@@ -213,6 +224,7 @@ namespace FloorplanAnnotator.Views
                 Background = new SolidColorBrush(Colors.White) { Opacity = 0.7 },
                 Padding = new Thickness(2)
             };
+
             Canvas.SetLeft(tb, x);
             Canvas.SetTop(tb, y);
             FloorplanCanvas.Children.Add(tb);
@@ -225,11 +237,13 @@ namespace FloorplanAnnotator.Views
 
             var parts = coordinates.Split(new[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries);
             var result = new List<double>();
+
             foreach (var p in parts)
             {
-                if (double.TryParse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double val))
+                if (double.TryParse(p.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var val))
                     result.Add(val);
             }
+
             return result.ToArray();
         }
 

@@ -1,21 +1,16 @@
-namespace FloorplanAnnotator.Models
-{
-    public enum AnnotationType
-    {
-        Rectangle,
-        Polygon,
-        Point,
-        Label
-    }
+namespace FloorplanAnnotator.Models;
 
-    public class Annotation
-    {
-        public int Id { get; set; }
-        public int ProjectId { get; set; }
-        public string Label { get; set; } = string.Empty;
-        public AnnotationType Type { get; set; } = AnnotationType.Rectangle;
-        public string Coordinates { get; set; } = string.Empty;
-        public string Color { get; set; } = "#FF0000";
-        public Project? Project { get; set; }
-    }
+public class Annotation
+{
+    public int Id { get; set; }
+    public int ProjectId { get; set; }
+
+    // Stabiele identiteit
+    public Guid PublicId { get; set; } = Guid.NewGuid();
+
+    // Handig als je ooit een bron-id uit import hebt
+    public string? ExternalSourceId { get; set; }
+
+    public Project? Project { get; set; }
+    public List<AnnotationRevision> Revisions { get; set; } = new();
 }

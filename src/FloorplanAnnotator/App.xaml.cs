@@ -1,38 +1,70 @@
 ﻿using System;
 using System.IO;
 using System.Windows;
-using FloorplanAnnotator.Converters;
 using FloorplanAnnotator.Services;
 using FloorplanAnnotator.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FloorplanAnnotator;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
 public partial class App : Application
 {
+    public static IServiceProvider Services { get; private set; } = null!;
+
     public App()
     {
-        Resources["BoolToVisConverter"] = new BoolToVisibilityConverter();
+        this.DispatcherUnhandledException += App_DispatcherUnhandledException;
     }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        var dbPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "FloorplanAnnotator",
-            "projects.db");
+        var services = new ServiceCollection();
 
-        Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+        ConfigureServices(services);
 
-        var repository = new ProjectRepository(dbPath);
-        var viewModel = new MainViewModel(repository);
+        Services = services.BuildServiceProvider();
 
-        var mainWindow = new MainWindow(viewModel);
+        var mainWindow = new MainWindow
+        {
+            DataContext = Services.GetRequiredService<MainViewModel>()
+        };
+
         mainWindow.Show();
     }
-}
 
+    private static void ConfigureServices(IServiceCollection services)
+    {
+        var appDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "FloorplanAnnotator");
+
+        Directory.CreateDirectory(appDataFolder);
+
+        var dbPath = Path.Combine(appDataFolder, "floorplans.db");
+
+        services.AddSingleton<IProjectRepository>(_ => new ProjectRepository(dbPath));
+
+        services.AddTransient<CreateProjectService>();
+        services.AddTransient<CreateProjectViewModel>();
+
+        services.AddSingleton<IViewModelFactory, ViewModelFactory>();
+
+        services.AddSingleton<MainViewModel>();
+    }
+
+    private void App_DispatcherUnhandledException(object sender,
+    System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        MessageBox.Show(
+            e.Exception.ToString(),
+            "Unhandled exception",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+
+        e.Handled = true;
+    }
+
+
+}

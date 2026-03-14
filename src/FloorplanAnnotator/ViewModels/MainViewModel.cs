@@ -16,6 +16,8 @@ namespace FloorplanAnnotator.ViewModels
     public class MainViewModel : BaseViewModel
     {
         private readonly IProjectRepository _repository;
+        private readonly IViewModelFactory _viewModelFactory;
+
         private Project? _selectedProject;
         private bool _isLoading;
         private string _statusMessage = Strings.Status_Ready;
@@ -35,10 +37,10 @@ namespace FloorplanAnnotator.ViewModels
 
         public bool HasSelectedProject => _selectedProject != null;
 
-        public ObservableCollection<Annotation> SelectedProjectAnnotations =>
+        public ObservableCollection<AnnotationRevision> SelectedProjectAnnotations =>
             _selectedProject != null
-                ? new ObservableCollection<Annotation>(_selectedProject.Annotations)
-                : new ObservableCollection<Annotation>();
+                ? new ObservableCollection<AnnotationRevision>(_selectedProject.Annotations.SelectMany(a => a.Revisions))
+                : new ObservableCollection<AnnotationRevision>();
 
         public bool IsLoading
         {
@@ -56,9 +58,10 @@ namespace FloorplanAnnotator.ViewModels
         public ICommand DeleteProjectCommand { get; }
         public ICommand SelectProjectCommand { get; }
 
-        public MainViewModel(IProjectRepository repository)
+        public MainViewModel(IProjectRepository repository, IViewModelFactory viewModelFactory)
         {
             _repository = repository;
+            _viewModelFactory = viewModelFactory;
             NewProjectCommand = new RelayCommand((Action)OpenNewProjectDialog);
             DeleteProjectCommand = new RelayCommand((Action<object?>)DeleteSelectedProject, parameter => HasSelectedProject);
             SelectProjectCommand = new RelayCommand<Project>(SelectProject);
@@ -93,42 +96,16 @@ namespace FloorplanAnnotator.ViewModels
 
         private void OpenNewProjectDialog()
         {
-            var viewModel = new CreateProjectViewModel();
+            var viewModel = _viewModelFactory.CreateCreateProjectViewModel();
             var dialog = new CreateProjectView(viewModel);
+
             viewModel.RequestClose += (_, _) => dialog.Close();
 
             dialog.ShowDialog();
 
-            if (viewModel.DialogResult && viewModel.CreatedProject != null)
+            if (viewModel.DialogResult)
             {
-                _ = SaveNewProjectAsync(viewModel.CreatedProject);
-            }
-        }
-
-        private async Task SaveNewProjectAsync(Project project)
-        {
-            IsLoading = true;
-            StatusMessage = Strings.Status_SavingProject;
-            try
-            {
-                var saved = await _repository.AddProjectAsync(project);
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Projects.Insert(0, saved);
-                    SelectedProject = saved;
-                    StatusMessage = string.Format(Strings.Status_ProjectCreated, saved.Name);
-                });
-            }
-            catch (Exception ex)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    StatusMessage = string.Format(Strings.Status_ErrorSaving, ex.Message);
-                });
-            }
-            finally
-            {
-                Application.Current.Dispatcher.Invoke(() => IsLoading = false);
+                _ = LoadProjectsAsync();
             }
         }
 

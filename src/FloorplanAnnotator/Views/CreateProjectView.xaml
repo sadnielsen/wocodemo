@@ -76,12 +76,18 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0"
-                       Text="{Binding ErrorMessage}"
-                       Foreground="Red"
-                       VerticalAlignment="Center"
-                       TextWrapping="Wrap"
-                       Visibility="{Binding HasError, Converter={StaticResource BoolToVisConverter}}" />
+           <TextBox Grid.Column="0"
+                Text="{Binding ErrorMessage}"
+                Foreground="Red"
+                VerticalAlignment="Center"
+                TextWrapping="Wrap"
+                IsReadOnly="True"
+                BorderThickness="0"
+                Background="Transparent"
+                AcceptsReturn="True"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Auto"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVisConverter}}" />
 
             <Button Grid.Column="1"
                     Content="{x:Static res:Strings.Create_Button}"
