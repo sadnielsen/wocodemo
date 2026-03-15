@@ -14,8 +14,8 @@ public class FloorplanRevisionConfig : IEntityTypeConfiguration<FloorplanRevisio
         builder.Property(fr => fr.FileContent).IsRequired();
         builder.Property(fr => fr.FileType).IsRequired();
         builder.Property(fr => fr.FileName).IsRequired();
-        builder.Property(fr => fr.CoordinateSystem).HasConversion<int>().IsRequired();
-        builder.Property(fr => fr.Origin).HasConversion<int>().IsRequired();
+        builder.Property(fr => fr.CoordinateSystem).HasConversion<string>().IsRequired();
+        builder.Property(fr => fr.Origin).HasConversion<string>().IsRequired();
         builder.Property(fr => fr.Width).IsRequired();
         builder.Property(fr => fr.Height).IsRequired();
         builder.Property(fr => fr.CreatedAtUtc).IsRequired();

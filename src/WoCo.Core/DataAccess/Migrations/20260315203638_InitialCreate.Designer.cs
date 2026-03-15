@@ -11,7 +11,7 @@ using WoCo.Core.DataAccess;
 namespace WoCo.Core.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260315195101_InitialCreate")]
+    [Migration("20260315203638_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -79,11 +79,13 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<int>("RevisionNumber")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Source")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -103,8 +105,9 @@ namespace WoCo.Core.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CoordinateSystem")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("CoordinateSystem")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
@@ -124,8 +127,9 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<double>("Height")
                         .HasColumnType("REAL");
 
-                    b.Property<int>("Origin")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("TEXT");

@@ -11,10 +11,10 @@ public class AnnotationRevisionConfig : IEntityTypeConfiguration<AnnotationRevis
         builder.HasKey(ar => ar.Id);
 
         builder.Property(ar => ar.RevisionNumber).IsRequired();
-        builder.Property(ar => ar.Source).HasConversion<int>().IsRequired();
+        builder.Property(ar => ar.Source).HasConversion<string>().IsRequired();
         builder.Property(ar => ar.Label).IsRequired().HasMaxLength(200);
         builder.Property(ar => ar.Description).HasMaxLength(2000);
-        builder.Property(ar => ar.Type).HasConversion<int>().IsRequired();
+        builder.Property(ar => ar.Type).HasConversion<string>().IsRequired();
         builder.Property(ar => ar.Color).IsRequired().HasMaxLength(20);
         builder.Property(ar => ar.RawCoordinates).IsRequired();
         builder.Property(ar => ar.NormalizedCoordinates).IsRequired();
