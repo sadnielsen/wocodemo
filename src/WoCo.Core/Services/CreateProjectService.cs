@@ -30,6 +30,9 @@ public sealed class CreateProjectService
         Validate(request);
 
         var importedAnnotations = AnnotationImportParser.ParseFromFile(request.AnnotationsPath);
+        var floorplanFileContent = File.ReadAllBytes(request.FloorplanPath);
+        var floorplanFileName = Path.GetFileName(request.FloorplanPath);
+        var floorplanFileType = Path.GetExtension(request.FloorplanPath).TrimStart('.').ToLowerInvariant();
 
         var now = DateTime.UtcNow;
 
@@ -42,11 +45,13 @@ public sealed class CreateProjectService
         var floorplanRevision = new FloorplanRevision
         {
             RevisionNumber = 0,
-            FloorplanPath = request.FloorplanPath,
-            SourceCoordinateSystem = request.SourceCoordinateSystem,
-            SourceOrigin = request.SourceOrigin,
-            SourceWidth = request.Width,
-            SourceHeight = request.Height,
+            FileContent = floorplanFileContent,
+            FileType = floorplanFileType,
+            FileName = floorplanFileName,
+            CoordinateSystem = request.SourceCoordinateSystem,
+            Origin = request.SourceOrigin,
+            Width = request.Width,
+            Height = request.Height,
             CreatedAtUtc = now
         };
 
@@ -62,8 +67,8 @@ public sealed class CreateProjectService
             var normalizedCoordinates = NormalizeCoordinates(
                 imported.Type,
                 imported.RawCoordinates,
-                floorplanRevision.SourceWidth,
-                floorplanRevision.SourceHeight,
+                floorplanRevision.Width,
+                floorplanRevision.Height,
                 request.SourceCoordinateSystem,
                 request.SourceOrigin);
 

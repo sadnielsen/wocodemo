@@ -49,11 +49,13 @@ namespace WoCo.Core.DataAccess.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     ProjectId = table.Column<Guid>(type: "TEXT", nullable: false),
                     RevisionNumber = table.Column<int>(type: "INTEGER", nullable: false),
-                    FloorplanPath = table.Column<string>(type: "TEXT", nullable: false),
-                    SourceCoordinateSystem = table.Column<int>(type: "INTEGER", nullable: false),
-                    SourceOrigin = table.Column<int>(type: "INTEGER", nullable: false),
-                    SourceWidth = table.Column<double>(type: "REAL", nullable: false),
-                    SourceHeight = table.Column<double>(type: "REAL", nullable: false),
+                    FileContent = table.Column<byte[]>(type: "BLOB", nullable: false),
+                    FileType = table.Column<string>(type: "TEXT", nullable: false),
+                    FileName = table.Column<string>(type: "TEXT", nullable: false),
+                    CoordinateSystem = table.Column<int>(type: "INTEGER", nullable: false),
+                    Origin = table.Column<int>(type: "INTEGER", nullable: false),
+                    Width = table.Column<double>(type: "REAL", nullable: false),
+                    Height = table.Column<double>(type: "REAL", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>

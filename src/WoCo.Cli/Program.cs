@@ -50,8 +50,10 @@ internal class Program
             foreach (var fp in floorplans)
             {
                 Console.WriteLine($"  FloorPlanRevision v{fp.RevisionNumber}");
-                Console.WriteLine($"    Size: {fp.SourceWidth} x {fp.SourceHeight}");
-                Console.WriteLine($"    File: {fp.FloorplanPath}");
+                Console.WriteLine($"    Size: {fp.Width} x {fp.Height}");
+                Console.WriteLine($"    FileName: {fp.FileName}");
+                Console.WriteLine($"    FileType: {fp.FileType}");
+                Console.WriteLine($"    FileBytes: {fp.FileContent.Length}");
             }
 
             var annotations = db.Annotations

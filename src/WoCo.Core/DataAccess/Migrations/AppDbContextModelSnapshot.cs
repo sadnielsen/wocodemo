@@ -100,12 +100,29 @@ namespace WoCo.Core.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("CoordinateSystem")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FloorplanPath")
+                    b.Property<byte[]>("FileContent")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Height")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Origin")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("TEXT");
@@ -113,16 +130,7 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<int>("RevisionNumber")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SourceCoordinateSystem")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("SourceHeight")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("SourceOrigin")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("SourceWidth")
+                    b.Property<double>("Width")
                         .HasColumnType("REAL");
 
                     b.HasKey("Id");

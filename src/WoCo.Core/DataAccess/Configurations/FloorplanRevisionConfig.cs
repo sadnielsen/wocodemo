@@ -11,11 +11,13 @@ public class FloorplanRevisionConfig : IEntityTypeConfiguration<FloorplanRevisio
         builder.HasKey(fr => fr.Id);
 
         builder.Property(fr => fr.RevisionNumber).IsRequired();
-        builder.Property(fr => fr.FloorplanPath).IsRequired();
-        builder.Property(fr => fr.SourceCoordinateSystem).HasConversion<int>().IsRequired();
-        builder.Property(fr => fr.SourceOrigin).HasConversion<int>().IsRequired();
-        builder.Property(fr => fr.SourceWidth).IsRequired();
-        builder.Property(fr => fr.SourceHeight).IsRequired();
+        builder.Property(fr => fr.FileContent).IsRequired();
+        builder.Property(fr => fr.FileType).IsRequired();
+        builder.Property(fr => fr.FileName).IsRequired();
+        builder.Property(fr => fr.CoordinateSystem).HasConversion<int>().IsRequired();
+        builder.Property(fr => fr.Origin).HasConversion<int>().IsRequired();
+        builder.Property(fr => fr.Width).IsRequired();
+        builder.Property(fr => fr.Height).IsRequired();
         builder.Property(fr => fr.CreatedAtUtc).IsRequired();
 
         builder.HasIndex(fr => new { fr.ProjectId, fr.RevisionNumber })
