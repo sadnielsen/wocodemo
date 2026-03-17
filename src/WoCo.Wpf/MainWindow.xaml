@@ -92,7 +92,7 @@
             <!-- Right Panel: Floorplan Viewer Component -->
             <controls:FloorplanViewer Grid.Column="2" 
                                       x:Name="FloorplanViewer"
-                                      FloorplanSource="{Binding CurrentFloorplanImage}" />
+                                      CurrentRevision="{Binding CurrentRevision}" />
         </Grid>
     </DockPanel>
 </Window>

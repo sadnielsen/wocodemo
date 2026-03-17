@@ -7,30 +7,40 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="250">
     <GroupBox Header="Projects &amp; Revisions" Margin="5">
-        <TreeView x:Name="ProjectsTreeView">
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding Revisions}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📁 " />
-                        <TextBlock Text="{Binding Name}" FontWeight="Bold" />
-                    </StackPanel>
-                    <HierarchicalDataTemplate.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📄 " />
-                                <TextBlock Text="Rev " />
-                                <TextBlock Text="{Binding Version}" FontWeight="SemiBold" />
-                                <TextBlock Text=" - " />
-                                <TextBlock Text="{Binding Date, StringFormat='{}{0:yyyy-MM-dd}'}" 
-                                           Foreground="Gray" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </HierarchicalDataTemplate.ItemTemplate>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-        </TreeView>
+        <Grid>
+            <!-- Loading indicator -->
+            <TextBlock Text="Loading projects..." 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       FontStyle="Italic"
+                       Foreground="Gray"
+                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <!-- TreeView -->
+            <TreeView x:Name="ProjectsTreeView"
+                      ItemsSource="{Binding Projects}"
+                      SelectedItemChanged="ProjectsTreeView_OnSelectedItemChanged">
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Revisions}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📁 " />
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                        </StackPanel>
+                        <HierarchicalDataTemplate.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📄 " />
+                                    <TextBlock Text="Rev " />
+                                    <TextBlock Text="{Binding Version}" FontWeight="SemiBold" />
+                                    <TextBlock Text=" - " />
+                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:yyyy-MM-dd}'}" 
+                                               Foreground="Gray" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </HierarchicalDataTemplate.ItemTemplate>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+        </Grid>
     </GroupBox>
 </UserControl>
-
-
-

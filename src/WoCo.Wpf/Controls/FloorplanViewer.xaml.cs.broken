@@ -25,81 +25,41 @@ public partial class FloorplanViewer : UserControl
         FitButton.Click += (s, e) => FitToWindow();
     }
 
-    public static readonly DependencyProperty CurrentRevisionProperty =
+    public static readonly DependencyProperty FloorplanSourceProperty =
         DependencyProperty.Register(
-            nameof(CurrentRevision),
-            typeof(RevisionViewModel),
+            nameof(FloorplanSource),
+            typeof(ImageSource),
             typeof(FloorplanViewer),
-            new PropertyMetadata(null, OnCurrentRevisionChanged));
+            new PropertyMetadata(null, OnFloorplanSourceChanged));
 
-    public RevisionViewModel? CurrentRevision
+    public static readonly DependencyProperty AnnotationsProperty =
+        DependencyProperty.Register(
+            nameof(Annotations),
+            typeof(IEnumerable<AnnotationViewModel>),
+            typeof(FloorplanViewer),
+            new PropertyMetadata(null, OnAnnotationsChanged));
+
+    public ImageSource? FloorplanSource
     {
-        get => (RevisionViewModel?)GetValue(CurrentRevisionProperty);
-        set => SetValue(CurrentRevisionProperty, value);
+        get => (ImageSource?)GetValue(FloorplanSourceProperty);
+        set => SetValue(FloorplanSourceProperty, value);
     }
 
-    private static void OnCurrentRevisionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    public IEnumerable<AnnotationViewModel>? Annotations
     {
-        System.Diagnostics.Debug.WriteLine($"OnCurrentRevisionChanged called! Old: {e.OldValue}, New: {e.NewValue}");
+        get => (IEnumerable<AnnotationViewModel>?)GetValue(AnnotationsProperty);
+        set => SetValue(AnnotationsProperty, value);
+    }
 
+    private static void OnFloorplanSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
         if (d is FloorplanViewer viewer)
         {
-            var revision = e.NewValue as RevisionViewModel;
+            viewer.FloorplanImage.Source = e.NewValue as ImageSource;
+            viewer.PlaceholderText.Visibility = e.NewValue == null ? Visibility.Visible : Visibility.Collapsed;
 
-            if (revision != null)
-            {
-                // Load floorplan image
-                viewer.LoadFloorplanImage(revision);
 
-                // Render annotations
-                viewer.RenderAnnotations(revision.Annotations);
-
-                System.Diagnostics.Debug.WriteLine($"Loaded revision {revision.Version} with {revision.Annotations.Count} annotations");
-            }
-            else
-            {
-                // Clear everything
-                viewer.FloorplanImage.Source = null;
-                viewer.AnnotationsCanvas.Children.Clear();
-                viewer.PlaceholderText.Visibility = Visibility.Visible;
-
-                System.Diagnostics.Debug.WriteLine("Cleared floorplan and annotations");
-            }
-        }
-    }
-
-    private void LoadFloorplanImage(RevisionViewModel revision)
-    {
-        try
-        {
-            if (revision.FileContent.Length > 0)
-            {
-                var image = new BitmapImage();
-                using (var stream = new System.IO.MemoryStream(revision.FileContent))
-                {
-                    image.BeginInit();
-                    image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = stream;
-                    image.EndInit();
-                    image.Freeze();
-                }
-
-                FloorplanImage.Source = image;
-                PlaceholderText.Visibility = Visibility.Collapsed;
-
-                // Update canvas size to match image
-                UpdateCanvasSize(image.PixelWidth, image.PixelHeight);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading floorplan image: {ex.Message}");
-            FloorplanImage.Source = null;
-            PlaceholderText.Visibility = Visibility.Visible;
-        }
-    }
-
-    private void RenderAnnotations(IEnumerable<AnnotationViewModel> annotations)
+            private void RenderAnnotations(IEnumerable<AnnotationViewModel> annotations)
     {
         AnnotationsCanvas.Children.Clear();
 
@@ -128,18 +88,15 @@ public partial class FloorplanViewer : UserControl
             var coordinates = ParseCoordinates(annotation.NormalizedCoordinates);
             if (coordinates.Length == 0) return;
 
-            // Convert normalized coordinates (0-1) to actual pixel coordinates
-            var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
-
             var color = (Color)ColorConverter.ConvertFromString(annotation.Color);
             var brush = new SolidColorBrush(color) { Opacity = 0.3 };
             var stroke = new SolidColorBrush(color);
 
             Shape? shape = annotation.Type switch
             {
-                AnnotationType.Rectangle => CreateRectangle(pixelCoordinates, brush, stroke),
-                AnnotationType.Polygon => CreatePolygon(pixelCoordinates, brush, stroke),
-                AnnotationType.Point => CreatePoint(pixelCoordinates, stroke),
+                AnnotationType.Rectangle => CreateRectangle(coordinates, brush, stroke),
+                AnnotationType.Polygon => CreatePolygon(coordinates, brush, stroke),
+                AnnotationType.Point => CreatePoint(coordinates, stroke),
                 AnnotationType.Label => null, // Labels handled separately
                 _ => null
             };
@@ -152,7 +109,7 @@ public partial class FloorplanViewer : UserControl
             // Add label if present
             if (!string.IsNullOrEmpty(annotation.Label))
             {
-                var label = CreateLabel(pixelCoordinates, annotation.Label, stroke);
+                var label = CreateLabel(coordinates, annotation.Label, stroke);
                 AnnotationsCanvas.Children.Add(label);
             }
         }
@@ -160,28 +117,6 @@ public partial class FloorplanViewer : UserControl
         {
             System.Diagnostics.Debug.WriteLine($"Error rendering annotation {annotation.Id}: {ex.Message}");
         }
-    }
-
-    private double[] ConvertToPixelCoordinates(double[] normalizedCoords)
-    {
-        var canvasWidth = AnnotationsCanvas.Width;
-        var canvasHeight = AnnotationsCanvas.Height;
-
-        if (double.IsNaN(canvasWidth) || double.IsNaN(canvasHeight))
-        {
-            System.Diagnostics.Debug.WriteLine("Canvas dimensions not set yet");
-            return normalizedCoords;
-        }
-
-        var pixelCoords = new double[normalizedCoords.Length];
-        for (int i = 0; i < normalizedCoords.Length; i++)
-        {
-            // X coordinates (even indices) scaled by width, Y coordinates (odd indices) scaled by height
-            pixelCoords[i] = normalizedCoords[i] * (i % 2 == 0 ? canvasWidth : canvasHeight);
-        }
-
-        System.Diagnostics.Debug.WriteLine($"Converted normalized {string.Join(",", normalizedCoords)} to pixel {string.Join(",", pixelCoords)}");
-        return pixelCoords;
     }
 
     private Rectangle CreateRectangle(double[] coords, Brush fill, Brush stroke)
@@ -256,10 +191,10 @@ public partial class FloorplanViewer : UserControl
 
         try
         {
-            // Parse comma-separated coordinate values using InvariantCulture to ensure decimal points work correctly
+            // Parse comma-separated coordinate values
             return normalizedCoordinates
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => double.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture))
+                .Select(s => double.Parse(s.Trim()))
                 .ToArray();
         }
         catch

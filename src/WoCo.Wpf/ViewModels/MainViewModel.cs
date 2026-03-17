@@ -8,12 +8,12 @@ namespace WoCo.Wpf.ViewModels;
 
 public class MainViewModel : INotifyPropertyChanged
 {
-    private ImageSource? _currentFloorplanImage;
+    private RevisionViewModel? _currentRevision;
 
     public MainViewModel(ProjectTreeViewModel projectTreeViewModel)
     {
         ProjectTreeViewModel = projectTreeViewModel;
-        
+
         // Subscribe to selection changes
         ProjectTreeViewModel.PropertyChanged += OnProjectTreeSelectionChanged;
     }
@@ -22,14 +22,14 @@ public class MainViewModel : INotifyPropertyChanged
 
     public object? SelectedProjectItem => ProjectTreeViewModel.SelectedProjectItem;
 
-    public ImageSource? CurrentFloorplanImage
+    public RevisionViewModel? CurrentRevision
     {
-        get => _currentFloorplanImage;
+        get => _currentRevision;
         set
         {
-            if (_currentFloorplanImage != value)
+            if (_currentRevision != value)
             {
-                _currentFloorplanImage = value;
+                _currentRevision = value;
                 OnPropertyChanged();
             }
         }
@@ -45,41 +45,16 @@ public class MainViewModel : INotifyPropertyChanged
         if (e.PropertyName == nameof(ProjectTreeViewModel.SelectedProjectItem))
         {
             OnPropertyChanged(nameof(SelectedProjectItem));
-            
-            // Load floorplan if a revision is selected
+
+            // Update CurrentRevision - let FloorplanViewer handle loading image and annotations
             if (SelectedProjectItem is RevisionViewModel revision)
             {
-                LoadFloorplanImage(revision);
+                CurrentRevision = revision;
             }
             else
             {
-                CurrentFloorplanImage = null;
+                CurrentRevision = null;
             }
-        }
-    }
-
-    private void LoadFloorplanImage(RevisionViewModel revision)
-    {
-        try
-        {
-            if (revision.FileContent.Length > 0)
-            {
-                var image = new BitmapImage();
-                using (var stream = new MemoryStream(revision.FileContent))
-                {
-                    image.BeginInit();
-                    image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = stream;
-                    image.EndInit();
-                    image.Freeze(); // Important for cross-thread access
-                }
-                CurrentFloorplanImage = image;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading floorplan image: {ex.Message}");
-            CurrentFloorplanImage = null;
         }
     }
 

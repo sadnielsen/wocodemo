@@ -36,26 +36,28 @@
                     <ScrollViewer x:Name="FloorplanScrollViewer" 
                                   HorizontalScrollBarVisibility="Auto" 
                                   VerticalScrollBarVisibility="Auto">
-                        <Grid>
-                            <Viewbox x:Name="FloorplanViewbox" Stretch="Uniform">
-                                <Canvas x:Name="FloorplanCanvas" 
-                                        Background="WhiteSmoke"
-                                        Width="800" 
-                                        Height="600">
-                                    <!-- Floorplan Image -->
-                                    <Image x:Name="FloorplanImage" 
-                                           Stretch="Uniform" />
-                                    
-                                    <!-- Annotations Layer -->
-                                    <Canvas x:Name="AnnotationsCanvas" 
-                                            Width="800" 
-                                            Height="600" 
-                                            Background="Transparent" />
-                                </Canvas>
-                            </Viewbox>
-                        </Grid>
+                        <Canvas x:Name="FloorplanCanvas" 
+                                Background="WhiteSmoke"
+                                Width="800" 
+                                Height="600">
+                            <Canvas.RenderTransform>
+                                <ScaleTransform x:Name="ScaleTransform" ScaleX="1.0" ScaleY="1.0" />
+                            </Canvas.RenderTransform>
+
+                            <!-- Floorplan Image -->
+                            <Image x:Name="FloorplanImage" 
+                                   Stretch="Fill"
+                                   Width="800"
+                                   Height="600" />
+
+                            <!-- Annotations Layer -->
+                            <Canvas x:Name="AnnotationsCanvas" 
+                                    Width="800" 
+                                    Height="600" 
+                                    Background="Transparent" />
+                        </Canvas>
                     </ScrollViewer>
-                    
+
                     <!-- Placeholder when no floorplan is loaded -->
                     <TextBlock x:Name="PlaceholderText"
                                Text="Select a project and revision to view floorplan"
