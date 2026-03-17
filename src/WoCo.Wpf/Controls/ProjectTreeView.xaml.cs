@@ -25,4 +25,9 @@ public partial class ProjectTreeView : UserControl
         get => GetValue(SelectedItemProperty);
         set => SetValue(SelectedItemProperty, value);
     }
+
+    private void ProjectsTreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        SelectedItem = e.NewValue;
+    }
 }

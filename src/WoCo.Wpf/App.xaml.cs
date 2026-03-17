@@ -1,12 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.ComponentModel;
-using System.Configuration;
-using System.Data;
 using System.Windows;
-using WoCo.Core.DataAccess;
 using WoCo.Core.DependencyInjection;
+using WoCo.Wpf.ViewModels;
 
 namespace WoCo.Wpf;
 
@@ -26,6 +22,10 @@ public partial class App : Application
             {
                 // Services
                 services.ConfigureWoCoServices();
+
+                // ViewModels
+                services.AddTransient<ProjectTreeViewModel>();
+                services.AddTransient<MainViewModel>();
 
                 // Views
                 services.AddSingleton<MainWindow>();
