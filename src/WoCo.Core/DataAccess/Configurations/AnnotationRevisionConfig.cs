@@ -1,0 +1,40 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using WoCo.Core.Models;
+
+namespace WoCo.Core.DataAccess.Configurations;
+
+public class AnnotationRevisionConfig : IEntityTypeConfiguration<AnnotationRevision>
+{
+    public void Configure(EntityTypeBuilder<AnnotationRevision> builder)
+    {
+        builder.HasKey(ar => ar.Id);
+
+        builder.Property(ar => ar.RevisionNumber).IsRequired();
+        builder.Property(ar => ar.Source).HasConversion<string>().IsRequired();
+        builder.Property(ar => ar.Label).IsRequired().HasMaxLength(200);
+        builder.Property(ar => ar.Description).HasMaxLength(2000);
+        builder.Property(ar => ar.Type).HasConversion<string>().IsRequired();
+        builder.Property(ar => ar.Color).IsRequired().HasMaxLength(20);
+        builder.Property(ar => ar.RawCoordinates).IsRequired();
+        builder.Property(ar => ar.NormalizedCoordinates).IsRequired();
+        builder.Property(ar => ar.IsDeleted).IsRequired();
+        builder.Property(ar => ar.CreatedAtUtc).IsRequired();
+
+        builder.HasOne(ar => ar.Annotation)
+            .WithMany(a => a.Revisions)
+            .HasForeignKey(ar => ar.AnnotationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(ar => ar.FloorplanRevision)
+            .WithMany(fr => fr.AnnotationRevisions)
+            .HasForeignKey(ar => ar.FloorplanRevisionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(ar => new { ar.AnnotationId, ar.FloorplanRevisionId })
+            .IsUnique();
+
+        builder.HasIndex(ar => new { ar.FloorplanRevisionId, ar.IsDeleted });
+        builder.HasIndex(ar => new { ar.AnnotationId, ar.RevisionNumber });
+    }
+}

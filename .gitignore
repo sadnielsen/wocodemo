@@ -7,6 +7,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
+# Ignore vscode settings folder
+.vs/
+*.suo
+*.user
+*.userprefs
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
