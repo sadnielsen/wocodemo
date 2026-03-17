@@ -4,9 +4,94 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WoCo.Wpf"
+        xmlns:controls="clr-namespace:WoCo.Wpf.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="WoCo - Work Coordination" Height="600" Width="1000"
+        WindowState="Maximized">
+    <DockPanel>
+        <!-- Top Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Project" />
+                <MenuItem Header="_Open Project" />
+                <Separator />
+                <MenuItem Header="_Save" />
+                <MenuItem Header="Save _As..." />
+                <Separator />
+                <MenuItem Header="E_xit" />
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" />
+                <MenuItem Header="_Redo" />
+                <Separator />
+                <MenuItem Header="Cu_t" />
+                <MenuItem Header="_Copy" />
+                <MenuItem Header="_Paste" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Zoom In" />
+                <MenuItem Header="Zoom _Out" />
+                <MenuItem Header="_Fit to Window" />
+                <Separator />
+                <MenuItem Header="_Refresh" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Options..." />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" />
+            </MenuItem>
+        </Menu>
 
-    </Grid>
+        <!-- Main Content Area -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <!-- Left Panel -->
+                <ColumnDefinition Width="300" MinWidth="200" />
+                <ColumnDefinition Width="Auto" />
+                <!-- Right Panel (Floorplan) -->
+                <ColumnDefinition Width="*" MinWidth="400" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Projects/Revisions and Meta Info -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <!-- Upper-Left: TreeView Component -->
+                    <RowDefinition Height="2*" MinHeight="200" />
+                    <RowDefinition Height="Auto" />
+                    <!-- Bottom-Left: Meta Info Component -->
+                    <RowDefinition Height="1*" MinHeight="150" />
+                </Grid.RowDefinitions>
+
+                <!-- Projects TreeView Component -->
+                <controls:ProjectTreeView Grid.Row="0" 
+                                          x:Name="ProjectTreeView"
+                                          SelectedItem="{Binding SelectedProjectItem, Mode=TwoWay}" />
+
+                <!-- Splitter between Components -->
+                <GridSplitter Grid.Row="1" 
+                              Height="5" 
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Center"
+                              Background="LightGray" />
+
+                <!-- Meta Info Component -->
+                <controls:MetaInfoPanel Grid.Row="2" 
+                                        x:Name="MetaInfoPanel"
+                                        SelectedItem="{Binding SelectedProjectItem}" />
+            </Grid>
+
+            <!-- Vertical Splitter -->
+            <GridSplitter Grid.Column="1" 
+                          Width="5" 
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"
+                          Background="LightGray" />
+
+            <!-- Right Panel: Floorplan Viewer Component -->
+            <controls:FloorplanViewer Grid.Column="2" 
+                                      x:Name="FloorplanViewer"
+                                      FloorplanSource="{Binding CurrentFloorplanImage}" />
+        </Grid>
+    </DockPanel>
 </Window>
