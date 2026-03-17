@@ -157,7 +157,7 @@ public partial class FloorplanViewer : UserControl
     {
         try
         {
-            var coordinates = ParseCoordinates(annotation.NormalizedCoordinates);
+            var coordinates = annotation.NormalizedCoordinates;
             if (coordinates.Length == 0) return;
 
             // Convert normalized coordinates (0-1) to actual pixel coordinates
@@ -296,25 +296,6 @@ public partial class FloorplanViewer : UserControl
         Canvas.SetTop(textBlock, coords.Length > 1 ? coords[1] : 0);
 
         return textBlock;
-    }
-
-    private double[] ParseCoordinates(string normalizedCoordinates)
-    {
-        if (string.IsNullOrWhiteSpace(normalizedCoordinates))
-            return Array.Empty<double>();
-
-        try
-        {
-            // Parse comma-separated coordinate values using InvariantCulture to ensure decimal points work correctly
-            return normalizedCoordinates
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => double.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture))
-                .ToArray();
-        }
-        catch
-        {
-            return Array.Empty<double>();
-        }
     }
 
     private void ZoomIn()
@@ -546,7 +527,7 @@ public partial class FloorplanViewer : UserControl
                 if (child is Polygon polygon)
                 {
                     // For polygons, recalculate points with offset
-                    var coordinates = ParseCoordinates(_draggedAnnotation!.NormalizedCoordinates);
+                    var coordinates = _draggedAnnotation!.NormalizedCoordinates;
                     var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
 
                     var newPoints = new PointCollection();
@@ -565,7 +546,7 @@ public partial class FloorplanViewer : UserControl
                 else if (child is Shape shape)
                 {
                     // For other shapes, get original position and add offset
-                    var coordinates = ParseCoordinates(_draggedAnnotation!.NormalizedCoordinates);
+                    var coordinates = _draggedAnnotation!.NormalizedCoordinates;
                     var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
 
                     Canvas.SetLeft(shape, pixelCoordinates[0] + totalOffset.X);
@@ -574,7 +555,7 @@ public partial class FloorplanViewer : UserControl
                 else if (child is TextBlock textBlock)
                 {
                     // Move label with the shape
-                    var coordinates = ParseCoordinates(_draggedAnnotation!.NormalizedCoordinates);
+                    var coordinates = _draggedAnnotation!.NormalizedCoordinates;
                     var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
 
                     Canvas.SetLeft(textBlock, pixelCoordinates[0] + totalOffset.X);

@@ -30,21 +30,21 @@ internal class Program
         bool shouldPurge = ShouldPurge(args);
         var loadPrefix = GetLoadPrefix(args);
 
-        if (shouldPurge)
-        {
-            Console.WriteLine("Do you want to purge the database? (y/n)");
-            var response = Console.ReadLine()?.Trim().ToLower();
+        //if (shouldPurge)
+        //{
+        //    Console.WriteLine("Do you want to purge the database? (y/n)");
+        //    var response = Console.ReadLine()?.Trim().ToLower();
 
-            if (response == "y" || response == "yes")
-            {
-                shouldPurge = true;
-            }
-            else
-            {
-                Console.WriteLine("Operation cancelled. Exiting...");
-                return;
-            }
-        }
+        //    if (response == "y" || response == "yes")
+        //    {
+        //        shouldPurge = true;
+        //    }
+        //    else
+        //    {
+        //        Console.WriteLine("Operation cancelled. Exiting...");
+        //        return;
+        //    }
+        //}
 
         if (shouldPurge)
         {
@@ -245,8 +245,9 @@ internal class Program
 
                 foreach (var rev in revisions)
                 {
+                    var coords = string.Join(",", rev.RawCoordinates.Select(d => d.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)));
                     Console.WriteLine(
-                        $"    Rev {rev.RevisionNumber} | {rev.Type} | ({rev.RawCoordinates}) | Deleted: {rev.IsDeleted} | CreatedAt: {rev.CreatedAtUtc}");
+                        $"    Rev {rev.RevisionNumber} | {rev.Type} | ({coords}) | Deleted: {rev.IsDeleted} | CreatedAt: {rev.CreatedAtUtc}");
                 }
             }
 

@@ -17,8 +17,8 @@ public class AnnotationViewModel
     public string? Description => _annotationRevision.Description;
     public AnnotationType Type => _annotationRevision.Type;
     public string Color => _annotationRevision.Color;
-    public string NormalizedCoordinates => _annotationRevision.NormalizedCoordinates;
-    public string RawCoordinates => _annotationRevision.RawCoordinates;
+    public double[] NormalizedCoordinates => _annotationRevision.NormalizedCoordinates;
+    public double[] RawCoordinates => _annotationRevision.RawCoordinates;
     public bool IsDeleted => _annotationRevision.IsDeleted;
     public DateTime CreatedAtUtc => _annotationRevision.CreatedAtUtc;
     

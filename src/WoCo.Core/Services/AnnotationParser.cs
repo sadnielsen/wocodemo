@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WoCo.Core.Types;
@@ -8,7 +9,7 @@ public sealed class ImportedAnnotation
 {
     public string Label { get; set; } = string.Empty;
     public AnnotationType Type { get; set; } = AnnotationType.Rectangle;
-    public string RawCoordinates { get; set; } = string.Empty;
+    public double[] RawCoordinates { get; set; } = [];
     public string Color { get; set; } = "#FF0000";
 }
 
@@ -48,7 +49,7 @@ public static class AnnotationImportParser
             {
                 Label = dto.Label,
                 Type = ParseAnnotationType(dto.Type),
-                RawCoordinates = dto.Coordinates,
+                RawCoordinates = ParseCoordinates(dto.Coordinates),
                 Color = dto.Color
             }).ToList();
         }
@@ -68,5 +69,16 @@ public static class AnnotationImportParser
             "label" => AnnotationType.Label,
             _ => AnnotationType.Rectangle
         };
+    }
+
+    private static double[] ParseCoordinates(string coordinates)
+    {
+        if (string.IsNullOrWhiteSpace(coordinates))
+            return [];
+
+        return coordinates
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => double.Parse(s, CultureInfo.InvariantCulture))
+            .ToArray();
     }
 }

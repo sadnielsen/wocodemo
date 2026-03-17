@@ -105,24 +105,21 @@ public sealed class CreateProjectService
             throw new FileNotFoundException("Annotations file not found.", request.AnnotationsPath);
     }
 
-    private static string NormalizeCoordinates(
+    private static double[] NormalizeCoordinates(
         AnnotationType type,
-        string rawCoordinates,
+        double[] rawCoordinates,
         double sourceWidth,
         double sourceHeight,
         CoordinateSystemType coordinateSystem,
         CoordinateOriginType origin)
     {
+        var numbers = rawCoordinates;
+
         if (coordinateSystem == CoordinateSystemType.Normalized &&
             origin == CoordinateOriginType.TopLeft)
         {
-            return rawCoordinates;
+            return numbers;
         }
-
-        var numbers = rawCoordinates
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(s => double.Parse(s, CultureInfo.InvariantCulture))
-            .ToArray();
 
         switch (type)
         {
@@ -134,7 +131,7 @@ public sealed class CreateProjectService
 
                 var x = NormalizeX(numbers[0], sourceWidth, coordinateSystem);
                 var y = NormalizeY(numbers[1], sourceHeight, coordinateSystem, origin);
-                return $"{Fmt(x)},{Fmt(y)}";
+                return [x, y];
             }
 
             case AnnotationType.Rectangle:
@@ -146,7 +143,7 @@ public sealed class CreateProjectService
                 var y = NormalizeY(numbers[1], sourceHeight, coordinateSystem, origin);
                 var w = NormalizeLength(numbers[2], sourceWidth, coordinateSystem);
                 var h = NormalizeLength(numbers[3], sourceHeight, coordinateSystem);
-                return $"{Fmt(x)},{Fmt(y)},{Fmt(w)},{Fmt(h)}";
+                return [x, y, w, h];
             }
 
             case AnnotationType.Polygon:
@@ -154,15 +151,15 @@ public sealed class CreateProjectService
                 if (numbers.Length < 6 || numbers.Length % 2 != 0)
                     throw new InvalidOperationException("Polygon requires x,y pairs.");
 
-                var normalized = new List<string>();
+                var normalized = new List<double>();
 
                 for (var i = 0; i < numbers.Length; i += 2)
                 {
-                    normalized.Add(Fmt(NormalizeX(numbers[i], sourceWidth, coordinateSystem)));
-                    normalized.Add(Fmt(NormalizeY(numbers[i + 1], sourceHeight, coordinateSystem, origin)));
+                    normalized.Add(NormalizeX(numbers[i], sourceWidth, coordinateSystem));
+                    normalized.Add(NormalizeY(numbers[i + 1], sourceHeight, coordinateSystem, origin));
                 }
 
-                return string.Join(",", normalized);
+                return normalized.ToArray();
             }
 
             default:
@@ -205,7 +202,4 @@ public sealed class CreateProjectService
             CoordinateSystemType.Normalized => value,
             _ => throw new NotSupportedException()
         };
-
-    private static string Fmt(double value)
-        => value.ToString("0.######", CultureInfo.InvariantCulture);
 }

@@ -125,9 +125,9 @@ public sealed class CreateRevisionService
             throw new InvalidOperationException("Height must be greater than zero.");
     }
 
-    private static string TransformCoordinates(
+    private static double[] TransformCoordinates(
         AnnotationType type,
-        string normalizedCoordinates,
+        double[] normalizedCoordinates,
         double oldWidth,
         double oldHeight,
         double newWidth,
@@ -135,10 +135,7 @@ public sealed class CreateRevisionService
         double offsetX = 0,
         double offsetY = 0)
     {
-        var numbers = normalizedCoordinates
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(s => double.Parse(s, CultureInfo.InvariantCulture))
-            .ToArray();
+        var numbers = normalizedCoordinates;
 
         var scaleX = newWidth / oldWidth;
         var scaleY = newHeight / oldHeight;
@@ -156,7 +153,7 @@ public sealed class CreateRevisionService
                 var oldY = numbers[1] * oldHeight;
                 var x = (oldX * scaleX) + offsetX;
                 var y = (oldY * scaleY) + offsetY;
-                return $"{Fmt(x)},{Fmt(y)}";
+                return [x, y];
             }
 
             case AnnotationType.Rectangle:
@@ -173,7 +170,7 @@ public sealed class CreateRevisionService
                 var y = (oldY * scaleY) + offsetY;
                 var w = oldW * scaleX;
                 var h = oldH * scaleY;
-                return $"{Fmt(x)},{Fmt(y)},{Fmt(w)},{Fmt(h)}";
+                return [x, y, w, h];
             }
 
             case AnnotationType.Polygon:
@@ -181,35 +178,32 @@ public sealed class CreateRevisionService
                 if (numbers.Length < 6 || numbers.Length % 2 != 0)
                     throw new InvalidOperationException("Polygon requires x,y pairs.");
 
-                var transformed = new List<string>();
+                var transformed = new List<double>();
 
                 for (var i = 0; i < numbers.Length; i += 2)
                 {
                     // Denormalize from 0-1 to old pixel coordinates, then transform to new
                     var oldX = numbers[i] * oldWidth;
                     var oldY = numbers[i + 1] * oldHeight;
-                    transformed.Add(Fmt((oldX * scaleX) + offsetX));
-                    transformed.Add(Fmt((oldY * scaleY) + offsetY));
+                    transformed.Add((oldX * scaleX) + offsetX);
+                    transformed.Add((oldY * scaleY) + offsetY);
                 }
 
-                    return string.Join(",", transformed);
-                }
+                return transformed.ToArray();
+            }
 
             default:
                 throw new NotSupportedException($"Unsupported annotation type: {type}");
         }
     }
 
-    private static string NormalizeCoordinates(
+    private static double[] NormalizeCoordinates(
         AnnotationType type,
-        string pixelCoordinates,
+        double[] pixelCoordinates,
         double width,
         double height)
     {
-        var numbers = pixelCoordinates
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(s => double.Parse(s, CultureInfo.InvariantCulture))
-            .ToArray();
+        var numbers = pixelCoordinates;
 
         switch (type)
         {
@@ -221,7 +215,7 @@ public sealed class CreateRevisionService
 
                 var x = numbers[0] / width;
                 var y = numbers[1] / height;
-                return $"{Fmt(x)},{Fmt(y)}";
+                return [x, y];
             }
 
             case AnnotationType.Rectangle:
@@ -233,7 +227,7 @@ public sealed class CreateRevisionService
                 var y = numbers[1] / height;
                 var w = numbers[2] / width;
                 var h = numbers[3] / height;
-                return $"{Fmt(x)},{Fmt(y)},{Fmt(w)},{Fmt(h)}";
+                return [x, y, w, h];
             }
 
             case AnnotationType.Polygon:
@@ -241,22 +235,19 @@ public sealed class CreateRevisionService
                 if (numbers.Length < 6 || numbers.Length % 2 != 0)
                     throw new InvalidOperationException("Polygon requires x,y pairs.");
 
-                var normalized = new List<string>();
+                var normalized = new List<double>();
 
                 for (var i = 0; i < numbers.Length; i += 2)
                 {
-                    normalized.Add(Fmt(numbers[i] / width));
-                    normalized.Add(Fmt(numbers[i + 1] / height));
+                    normalized.Add(numbers[i] / width);
+                    normalized.Add(numbers[i + 1] / height);
                 }
 
-                return string.Join(",", normalized);
+                return normalized.ToArray();
             }
 
             default:
                 throw new NotSupportedException($"Unsupported annotation type: {type}");
         }
     }
-
-    private static string Fmt(double value)
-        => value.ToString("0.######", CultureInfo.InvariantCulture);
 }
