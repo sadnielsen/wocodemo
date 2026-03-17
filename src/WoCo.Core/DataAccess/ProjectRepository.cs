@@ -44,6 +44,15 @@ internal class ProjectRepository : IProjectRepository
         return project;
     }
 
+    public async Task<Project> UpdateProjectAsync(Project project)
+    {
+        var _context = CreateContext;
+
+        _context.Projects.Update(project);
+        await _context.SaveChangesAsync();
+        return project;
+    }
+
     public async Task DeleteProjectAsync(Guid id)
     {
         var _context = CreateContext;

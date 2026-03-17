@@ -1,0 +1,15 @@
+[
+  {
+    "label": "Maurijn's Bureau",
+    "type": "point",
+    "coordinates": "143,211",
+    "color": "#4CAF50"
+  },
+  {
+    "label": "Test",
+    "type": "polygon",
+    "coordinates": "142,212,328,138,469,508,286,580",
+    "color": "#4CAF50"
+  }
+
+]
