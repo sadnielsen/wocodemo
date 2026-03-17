@@ -441,6 +441,20 @@ public partial class FloorplanViewer : UserControl
             Foreground = Brushes.Gray
         });
 
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = $"Raw coordinates: {annotation.RawCoordinates}",
+            FontSize = 11,
+            Foreground = Brushes.Gray
+        });
+
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = $"Normalized coordinates: {annotation.NormalizedCoordinates}",
+            FontSize = 11,
+            Foreground = Brushes.Gray
+        });
+
         stackPanel.Children.Add(new TextBlock 
         { 
             Text = $"Created: {annotation.CreatedAtUtc:g}",

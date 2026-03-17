@@ -13,6 +13,10 @@ public sealed class CreateRevisionRequest
     public double Height { get; set; }
     public CoordinateSystemType SourceCoordinateSystem { get; init; } = CoordinateSystemType.Pixels;
     public CoordinateOriginType SourceOrigin { get; init; } = CoordinateOriginType.TopLeft;
+
+    // Transformation parameters (not persisted, only used during creation)
+    public double OffsetX { get; init; } = 0;
+    public double OffsetY { get; init; } = 0;
 }
 
 public sealed class CreateRevisionService
@@ -74,6 +78,14 @@ public sealed class CreateRevisionService
                 latestFloorplan.Width,
                 latestFloorplan.Height,
                 request.Width,
+                request.Height,
+                request.OffsetX,
+                request.OffsetY);
+
+            var normalizedCoordinates = NormalizeCoordinates(
+                latestAnnotationRevision.Type,
+                transformedCoordinates,
+                request.Width,
                 request.Height);
 
             var newAnnotationRevision = new AnnotationRevision
@@ -86,7 +98,7 @@ public sealed class CreateRevisionService
                 Type = latestAnnotationRevision.Type,
                 Color = latestAnnotationRevision.Color,
                 RawCoordinates = transformedCoordinates,
-                NormalizedCoordinates = transformedCoordinates,
+                NormalizedCoordinates = normalizedCoordinates,
                 IsDeleted = false,
                 CreatedAtUtc = now
             };
@@ -119,7 +131,9 @@ public sealed class CreateRevisionService
         double oldWidth,
         double oldHeight,
         double newWidth,
-        double newHeight)
+        double newHeight,
+        double offsetX = 0,
+        double offsetY = 0)
     {
         var numbers = normalizedCoordinates
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -137,8 +151,11 @@ public sealed class CreateRevisionService
                 if (numbers.Length != 2)
                     throw new InvalidOperationException("Point/Label requires x,y.");
 
-                var x = numbers[0];
-                var y = numbers[1];
+                // Denormalize from 0-1 to old pixel coordinates, then transform to new
+                var oldX = numbers[0] * oldWidth;
+                var oldY = numbers[1] * oldHeight;
+                var x = (oldX * scaleX) + offsetX;
+                var y = (oldY * scaleY) + offsetY;
                 return $"{Fmt(x)},{Fmt(y)}";
             }
 
@@ -147,10 +164,15 @@ public sealed class CreateRevisionService
                 if (numbers.Length != 4)
                     throw new InvalidOperationException("Rectangle requires x,y,width,height.");
 
-                var x = numbers[0];
-                var y = numbers[1];
-                var w = numbers[2];
-                var h = numbers[3];
+                // Denormalize from 0-1 to old pixel coordinates, then transform to new
+                var oldX = numbers[0] * oldWidth;
+                var oldY = numbers[1] * oldHeight;
+                var oldW = numbers[2] * oldWidth;
+                var oldH = numbers[3] * oldHeight;
+                var x = (oldX * scaleX) + offsetX;
+                var y = (oldY * scaleY) + offsetY;
+                var w = oldW * scaleX;
+                var h = oldH * scaleY;
                 return $"{Fmt(x)},{Fmt(y)},{Fmt(w)},{Fmt(h)}";
             }
 
@@ -163,11 +185,71 @@ public sealed class CreateRevisionService
 
                 for (var i = 0; i < numbers.Length; i += 2)
                 {
-                    transformed.Add(Fmt(numbers[i]));
-                    transformed.Add(Fmt(numbers[i + 1]));
+                    // Denormalize from 0-1 to old pixel coordinates, then transform to new
+                    var oldX = numbers[i] * oldWidth;
+                    var oldY = numbers[i + 1] * oldHeight;
+                    transformed.Add(Fmt((oldX * scaleX) + offsetX));
+                    transformed.Add(Fmt((oldY * scaleY) + offsetY));
                 }
 
-                return string.Join(",", transformed);
+                    return string.Join(",", transformed);
+                }
+
+            default:
+                throw new NotSupportedException($"Unsupported annotation type: {type}");
+        }
+    }
+
+    private static string NormalizeCoordinates(
+        AnnotationType type,
+        string pixelCoordinates,
+        double width,
+        double height)
+    {
+        var numbers = pixelCoordinates
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => double.Parse(s, CultureInfo.InvariantCulture))
+            .ToArray();
+
+        switch (type)
+        {
+            case AnnotationType.Point:
+            case AnnotationType.Label:
+            {
+                if (numbers.Length != 2)
+                    throw new InvalidOperationException("Point/Label requires x,y.");
+
+                var x = numbers[0] / width;
+                var y = numbers[1] / height;
+                return $"{Fmt(x)},{Fmt(y)}";
+            }
+
+            case AnnotationType.Rectangle:
+            {
+                if (numbers.Length != 4)
+                    throw new InvalidOperationException("Rectangle requires x,y,width,height.");
+
+                var x = numbers[0] / width;
+                var y = numbers[1] / height;
+                var w = numbers[2] / width;
+                var h = numbers[3] / height;
+                return $"{Fmt(x)},{Fmt(y)},{Fmt(w)},{Fmt(h)}";
+            }
+
+            case AnnotationType.Polygon:
+            {
+                if (numbers.Length < 6 || numbers.Length % 2 != 0)
+                    throw new InvalidOperationException("Polygon requires x,y pairs.");
+
+                var normalized = new List<string>();
+
+                for (var i = 0; i < numbers.Length; i += 2)
+                {
+                    normalized.Add(Fmt(numbers[i] / width));
+                    normalized.Add(Fmt(numbers[i + 1] / height));
+                }
+
+                return string.Join(",", normalized);
             }
 
             default:
