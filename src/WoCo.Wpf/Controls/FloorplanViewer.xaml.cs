@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -14,6 +15,10 @@ namespace WoCo.Wpf.Controls;
 public partial class FloorplanViewer : UserControl
 {
     private double _currentZoom = 1.0;
+    private bool _isDragging = false;
+    private UIElement? _draggedElement = null;
+    private Point _dragStartPoint;
+    private AnnotationViewModel? _draggedAnnotation = null;
 
     public FloorplanViewer()
     {
@@ -23,6 +28,10 @@ public partial class FloorplanViewer : UserControl
         ZoomInButton.Click += (s, e) => ZoomIn();
         ZoomOutButton.Click += (s, e) => ZoomOut();
         FitButton.Click += (s, e) => FitToWindow();
+
+        // Wire up canvas click to unselect when clicking outside annotations
+        AnnotationsCanvas.MouseLeftButtonDown += OnCanvasMouseLeftButtonDown;
+        AnnotationsCanvas.MouseWheel += OnCanvasMouseWheel;
     }
 
     public static readonly DependencyProperty CurrentRevisionProperty =
@@ -36,6 +45,29 @@ public partial class FloorplanViewer : UserControl
     {
         get => (RevisionViewModel?)GetValue(CurrentRevisionProperty);
         set => SetValue(CurrentRevisionProperty, value);
+    }
+
+    public static readonly DependencyProperty SelectedAnnotationProperty =
+        DependencyProperty.Register(
+            nameof(SelectedAnnotation),
+            typeof(AnnotationViewModel),
+            typeof(FloorplanViewer),
+            new PropertyMetadata(null, OnSelectedAnnotationChanged));
+
+    public AnnotationViewModel? SelectedAnnotation
+    {
+        get => (AnnotationViewModel?)GetValue(SelectedAnnotationProperty);
+        set => SetValue(SelectedAnnotationProperty, value);
+    }
+
+    public event EventHandler<AnnotationViewModel>? AnnotationSelected;
+
+    private static void OnSelectedAnnotationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is FloorplanViewer viewer)
+        {
+            viewer.HighlightSelectedAnnotation();
+        }
     }
 
     private static void OnCurrentRevisionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -135,6 +167,13 @@ public partial class FloorplanViewer : UserControl
             var brush = new SolidColorBrush(color) { Opacity = 0.3 };
             var stroke = new SolidColorBrush(color);
 
+            // Create a container to group shape and label together
+            var annotationContainer = new Canvas
+            {
+                Tag = annotation,
+                Background = Brushes.Transparent // Needed for hit testing
+            };
+
             Shape? shape = annotation.Type switch
             {
                 AnnotationType.Rectangle => CreateRectangle(pixelCoordinates, brush, stroke),
@@ -146,15 +185,25 @@ public partial class FloorplanViewer : UserControl
 
             if (shape != null)
             {
-                AnnotationsCanvas.Children.Add(shape);
+                // Add shape to container (no Canvas positioning needed, shape handles it internally)
+                annotationContainer.Children.Add(shape);
             }
 
             // Add label if present
             if (!string.IsNullOrEmpty(annotation.Label))
             {
                 var label = CreateLabel(pixelCoordinates, annotation.Label, stroke);
-                AnnotationsCanvas.Children.Add(label);
+                annotationContainer.Children.Add(label);
             }
+
+            // Make the entire container interactive
+            MakeAnnotationContainerInteractive(annotationContainer, annotation);
+
+            // Position the container at origin (0,0) since children have their own positions
+            Canvas.SetLeft(annotationContainer, 0);
+            Canvas.SetTop(annotationContainer, 0);
+
+            AnnotationsCanvas.Children.Add(annotationContainer);
         }
         catch (Exception ex)
         {
@@ -303,6 +352,293 @@ public partial class FloorplanViewer : UserControl
         AnnotationsCanvas.Height = height;
 
         System.Diagnostics.Debug.WriteLine($"Canvas updated to size: {width}x{height}");
+    }
+
+    private void MakeAnnotationContainerInteractive(Canvas container, AnnotationViewModel annotation)
+    {
+        container.Cursor = Cursors.Hand;
+
+        // Tooltip with annotation details (shows on hover)
+        container.ToolTip = CreateAnnotationTooltip(annotation);
+
+        // Left-click to select/unselect
+        container.MouseLeftButtonDown += OnAnnotationLeftClick;
+
+        // Right-click to start drag
+        container.MouseRightButtonDown += OnAnnotationRightMouseDown;
+        container.MouseRightButtonUp += OnAnnotationRightMouseUp;
+        container.MouseMove += OnAnnotationMouseMove;
+
+        // Hover effects - apply to all shapes within the container
+        container.MouseEnter += (s, e) =>
+        {
+            if (s is Canvas c)
+            {
+                foreach (var child in c.Children)
+                {
+                    if (child is Shape shape)
+                    {
+                        shape.Opacity = 0.6;
+                        shape.StrokeThickness = 3;
+                    }
+                    else if (child is TextBlock tb)
+                    {
+                        tb.FontWeight = FontWeights.ExtraBold;
+                        tb.Background = new SolidColorBrush(Colors.Yellow) { Opacity = 0.5 };
+                    }
+                }
+            }
+        };
+
+        container.MouseLeave += (s, e) =>
+        {
+            if (s is Canvas c)
+            {
+                foreach (var child in c.Children)
+                {
+                    if (child is Shape shape)
+                    {
+                        shape.Opacity = 1.0;
+                        shape.StrokeThickness = 2;
+                    }
+                    else if (child is TextBlock tb)
+                    {
+                        tb.FontWeight = FontWeights.Bold;
+                        tb.Background = new SolidColorBrush(Colors.White) { Opacity = 0.8 };
+                    }
+                }
+            }
+        };
+    }
+
+    private ToolTip CreateAnnotationTooltip(AnnotationViewModel annotation)
+    {
+        var tooltip = new ToolTip();
+        var stackPanel = new StackPanel();
+
+        stackPanel.Children.Add(new TextBlock 
+        { 
+            Text = annotation.Label, 
+            FontWeight = FontWeights.Bold,
+            Margin = new Thickness(0, 0, 0, 5)
+        });
+
+        if (!string.IsNullOrEmpty(annotation.Description))
+        {
+            stackPanel.Children.Add(new TextBlock 
+            { 
+                Text = annotation.Description,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 300,
+                Margin = new Thickness(0, 0, 0, 5)
+            });
+        }
+
+        stackPanel.Children.Add(new TextBlock 
+        { 
+            Text = $"Type: {annotation.Type}",
+            FontSize = 11,
+            Foreground = Brushes.Gray
+        });
+
+        stackPanel.Children.Add(new TextBlock 
+        { 
+            Text = $"Created: {annotation.CreatedAtUtc:g}",
+            FontSize = 11,
+            Foreground = Brushes.Gray
+        });
+
+        tooltip.Content = stackPanel;
+        return tooltip;
+    }
+
+    private void OnAnnotationLeftClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Canvas container && container.Tag is AnnotationViewModel annotation)
+        {
+            // Toggle selection: if already selected, unselect; otherwise select
+            if (SelectedAnnotation?.Id == annotation.Id)
+            {
+                SelectedAnnotation = null;
+                System.Diagnostics.Debug.WriteLine($"Unselected annotation: {annotation.Label}");
+            }
+            else
+            {
+                SelectedAnnotation = annotation;
+                AnnotationSelected?.Invoke(this, annotation);
+                System.Diagnostics.Debug.WriteLine($"Selected annotation: {annotation.Label}");
+            }
+
+            e.Handled = true;
+        }
+    }
+
+    private void OnCanvasMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // If clicking directly on the canvas (not on an annotation), unselect
+        if (e.Source == AnnotationsCanvas)
+        {
+            if (SelectedAnnotation != null)
+            {
+                SelectedAnnotation = null;
+                System.Diagnostics.Debug.WriteLine("Unselected annotation (clicked on canvas)");
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void OnCanvasMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (e.Delta > 0)
+        {
+            ZoomIn();
+        }
+        else
+        {
+            ZoomOut();
+        }
+
+        e.Handled = true;
+    }
+
+    private void OnAnnotationRightMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Canvas container && container.Tag is AnnotationViewModel annotation)
+        {
+            // Start drag operation with right mouse button
+            _isDragging = true;
+            _draggedElement = container;
+            _draggedAnnotation = annotation;
+            _dragStartPoint = e.GetPosition(AnnotationsCanvas);
+
+            container.CaptureMouse();
+            container.Cursor = Cursors.SizeAll; // Change cursor to indicate dragging
+            e.Handled = true;
+
+            System.Diagnostics.Debug.WriteLine($"Started dragging annotation: {annotation.Label}");
+        }
+    }
+
+    private void OnAnnotationMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isDragging && _draggedElement is Canvas container && e.RightButton == MouseButtonState.Pressed)
+        {
+            var currentPosition = e.GetPosition(AnnotationsCanvas);
+            var totalOffset = currentPosition - _dragStartPoint;
+
+            // Move all children in the container together
+            foreach (var child in container.Children)
+            {
+                if (child is Polygon polygon)
+                {
+                    // For polygons, recalculate points with offset
+                    var coordinates = ParseCoordinates(_draggedAnnotation!.NormalizedCoordinates);
+                    var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
+
+                    var newPoints = new PointCollection();
+                    for (int i = 0; i < pixelCoordinates.Length; i += 2)
+                    {
+                        if (i + 1 < pixelCoordinates.Length)
+                        {
+                            newPoints.Add(new Point(
+                                pixelCoordinates[i] + totalOffset.X,
+                                pixelCoordinates[i + 1] + totalOffset.Y
+                            ));
+                        }
+                    }
+                    polygon.Points = newPoints;
+                }
+                else if (child is Shape shape)
+                {
+                    // For other shapes, get original position and add offset
+                    var coordinates = ParseCoordinates(_draggedAnnotation!.NormalizedCoordinates);
+                    var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
+
+                    Canvas.SetLeft(shape, pixelCoordinates[0] + totalOffset.X);
+                    Canvas.SetTop(shape, pixelCoordinates.Length > 1 ? pixelCoordinates[1] + totalOffset.Y : totalOffset.Y);
+                }
+                else if (child is TextBlock textBlock)
+                {
+                    // Move label with the shape
+                    var coordinates = ParseCoordinates(_draggedAnnotation!.NormalizedCoordinates);
+                    var pixelCoordinates = ConvertToPixelCoordinates(coordinates);
+
+                    Canvas.SetLeft(textBlock, pixelCoordinates[0] + totalOffset.X);
+                    Canvas.SetTop(textBlock, pixelCoordinates.Length > 1 ? pixelCoordinates[1] + totalOffset.Y : totalOffset.Y);
+                }
+            }
+
+            e.Handled = true;
+        }
+    }
+
+    private void OnAnnotationRightMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isDragging && _draggedElement is Canvas container)
+        {
+            container.ReleaseMouseCapture();
+            container.Cursor = Cursors.Hand; // Restore normal cursor
+
+            // Save the new position
+            if (_draggedAnnotation != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Annotation {_draggedAnnotation.Label} moved. New position should be saved.");
+                // TODO: Implement a method to update the annotation coordinates
+                // UpdateAnnotationCoordinates(_draggedAnnotation, newNormalizedCoordinates);
+            }
+
+            // Reset drag state
+            _isDragging = false;
+            _draggedElement = null;
+            _draggedAnnotation = null;
+
+            e.Handled = true;
+        }
+    }
+
+    private void HighlightSelectedAnnotation()
+    {
+        // Reset all annotation containers to normal state
+        foreach (var child in AnnotationsCanvas.Children)
+        {
+            if (child is Canvas container && container.Tag is AnnotationViewModel annotation)
+            {
+                // Restore original color from annotation
+                var color = (Color)ColorConverter.ConvertFromString(annotation.Color);
+                var originalStroke = new SolidColorBrush(color);
+
+                foreach (var innerChild in container.Children)
+                {
+                    if (innerChild is Shape shape)
+                    {
+                        shape.StrokeThickness = 2;
+                        shape.Stroke = originalStroke; // Restore original color
+                    }
+                }
+            }
+        }
+
+        // Highlight the selected annotation
+        if (SelectedAnnotation != null)
+        {
+            foreach (var child in AnnotationsCanvas.Children)
+            {
+                if (child is Canvas container && container.Tag is AnnotationViewModel annotation)
+                {
+                    if (annotation.Id == SelectedAnnotation.Id)
+                    {
+                        foreach (var innerChild in container.Children)
+                        {
+                            if (innerChild is Shape shape)
+                            {
+                                shape.StrokeThickness = 4;
+                                shape.Stroke = Brushes.Blue; // Highlight color
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
