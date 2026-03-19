@@ -12,13 +12,15 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly ICreateRevisionService _createRevisionService;
+    private readonly ICreateProjectService _createProjectService;
 
-    public MainWindow(MainViewModel viewModel, ICreateRevisionService createRevisionService)
+    public MainWindow(MainViewModel viewModel, ICreateRevisionService createRevisionService, ICreateProjectService createProjectService)
     {
         InitializeComponent();
 
         _viewModel = viewModel;
         _createRevisionService = createRevisionService;
+        _createProjectService = createProjectService;
         DataContext = _viewModel;
 
         Loaded += OnLoaded;
@@ -27,6 +29,32 @@ public partial class MainWindow : Window
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.InitializeAsync();
+    }
+
+    private async void NewProject_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new CreateProjectWindow
+        {
+            Owner = this
+        };
+
+        if (dialog.ShowDialog() == true && dialog.Request != null)
+        {
+            try
+            {
+                // Use service to create project
+                var newProject = await _createProjectService.CreateAsync(dialog.Request);
+
+                // Reload the view model to include the new project
+                await _viewModel.InitializeAsync();
+
+                MessageBox.Show($"Project '{newProject.Name}' created successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error creating project: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
     private async void AddRevision_Click(object sender, RoutedEventArgs e)

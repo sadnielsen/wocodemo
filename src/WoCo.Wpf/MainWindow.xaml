@@ -12,7 +12,7 @@
         <!-- Top Menu Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_New Project" />
+                <MenuItem Header="_New Project" Click="NewProject_Click" />
                 <MenuItem Header="_Open Project" />
                 <Separator />
                 <MenuItem Header="Add _Revision..." Click="AddRevision_Click" />
