@@ -24,7 +24,8 @@ public static class ServiceCollectionExtensions
 
         services
             .AddTransient<ICreateProjectService, CreateProjectService>()
-            .AddTransient<ICreateRevisionService, CreateRevisionService>();
+            .AddTransient<ICreateRevisionService, CreateRevisionService>()
+            .AddTransient<IAnnotationService, AnnotationService>();
 
         return services;
     }

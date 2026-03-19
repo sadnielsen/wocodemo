@@ -36,7 +36,11 @@ public class AnnotationRevisionConfig : IEntityTypeConfiguration<AnnotationRevis
                 v => string.Join(",", v.Select(d => d.ToString("0.######", CultureInfo.InvariantCulture))),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(s => double.Parse(s, CultureInfo.InvariantCulture))
-                    .ToArray());
+                    .ToArray())
+            .Metadata.SetValueComparer(new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<double[]>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToArray()));
 
         builder.Property(ar => ar.IsDeleted).IsRequired();
         builder.Property(ar => ar.CreatedAtUtc).IsRequired();

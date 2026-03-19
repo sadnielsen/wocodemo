@@ -12,23 +12,9 @@
         <!-- Top Menu Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_New Project" />
-                <MenuItem Header="_Open Project" />
-                <Separator />
+                <MenuItem Header="_New Project" Click="NewProject_Click" />
                 <MenuItem Header="Add _Revision..." Click="AddRevision_Click" />
-                <Separator />
-                <MenuItem Header="_Save" />
-                <MenuItem Header="Save _As..." />
-                <Separator />
-                <MenuItem Header="E_xit" />
-            </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" />
-                <MenuItem Header="_Redo" />
-                <Separator />
-                <MenuItem Header="Cu_t" />
-                <MenuItem Header="_Copy" />
-                <MenuItem Header="_Paste" />
+                <MenuItem Header="_Save Changes"  Click="SaveChanges_Click" />
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Zoom In" />
@@ -36,12 +22,6 @@
                 <MenuItem Header="_Fit to Window" />
                 <Separator />
                 <MenuItem Header="_Refresh" />
-            </MenuItem>
-            <MenuItem Header="_Tools">
-                <MenuItem Header="_Options..." />
-            </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="_About" />
             </MenuItem>
         </Menu>
 
