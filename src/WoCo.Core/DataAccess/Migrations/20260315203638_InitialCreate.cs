@@ -56,7 +56,10 @@ namespace WoCo.Core.DataAccess.Migrations
                     Origin = table.Column<string>(type: "TEXT", nullable: false),
                     Width = table.Column<double>(type: "REAL", nullable: false),
                     Height = table.Column<double>(type: "REAL", nullable: false),
-                    CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ScaleDenominator = table.Column<double>(type: "REAL", nullable: false, defaultValue: 1.0),
+                    OffsetX = table.Column<double>(type: "REAL", nullable: false, defaultValue: 0.0),
+                    OffsetY = table.Column<double>(type: "REAL", nullable: false, defaultValue: 0.0)
                 },
                 constraints: table =>
                 {

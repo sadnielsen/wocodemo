@@ -20,6 +20,11 @@ public class FloorplanRevisionConfig : IEntityTypeConfiguration<FloorplanRevisio
         builder.Property(fr => fr.Height).IsRequired();
         builder.Property(fr => fr.CreatedAtUtc).IsRequired();
 
+        // Transformation properties (relative to initial revision)
+        builder.Property(fr => fr.ScaleDenominator).IsRequired().HasDefaultValue(1.0);
+        builder.Property(fr => fr.OffsetX).IsRequired().HasDefaultValue(0.0);
+        builder.Property(fr => fr.OffsetY).IsRequired().HasDefaultValue(0.0);
+
         builder.HasIndex(fr => new { fr.ProjectId, fr.RevisionNumber })
             .IsUnique();
 

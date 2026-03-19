@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Windows;
+using WoCo.Core.DataAccess;
 using WoCo.Core.DependencyInjection;
 using WoCo.Wpf.ViewModels;
 
@@ -33,6 +35,14 @@ public partial class App : Application
             .Build();
 
         await _host.StartAsync();
+
+        // Apply migrations on startup
+        using (var scope = _host.Services.CreateScope())
+        {
+            var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+            using var db = factory.CreateDbContext();
+            db.Database.Migrate();
+        }
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();

@@ -12,6 +12,9 @@ public sealed class CreateProjectRequest
     public string AnnotationsPath { get; init; } = string.Empty;
     public double Width { get; set; }
     public double Height { get; set; }
+    public double ScaleDenominator { get; set; } = 1.0;
+    public double OffsetX { get; set; } = 0.0;
+    public double OffsetY { get; set; } = 0.0;
     public CoordinateSystemType SourceCoordinateSystem { get; init; } = CoordinateSystemType.Pixels;
     public CoordinateOriginType SourceOrigin { get; init; } = CoordinateOriginType.TopLeft;
 }
@@ -52,6 +55,9 @@ public sealed class CreateProjectService : ICreateProjectService
             Origin = request.SourceOrigin,
             Width = request.Width,
             Height = request.Height,
+            ScaleDenominator = request.ScaleDenominator,
+            OffsetX = request.OffsetX,
+            OffsetY = request.OffsetY,
             CreatedAtUtc = now
         };
 
