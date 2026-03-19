@@ -1,8 +1,7 @@
 {
   "profiles": {
     "WoCo.Cli": {
-      "commandName": "Project",
-      "commandLineArgs": "load=1"
+      "commandName": "Project"
     }
   }
 }

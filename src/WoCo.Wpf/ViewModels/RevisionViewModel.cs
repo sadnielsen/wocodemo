@@ -7,9 +7,10 @@ public class RevisionViewModel
 {
     private readonly FloorplanRevision _revision;
 
-    public RevisionViewModel(FloorplanRevision revision)
+    public RevisionViewModel(FloorplanRevision revision, ProjectViewModel? parentProject = null)
     {
         _revision = revision;
+        ParentProject = parentProject;
 
         // Load annotations for this revision
         foreach (var annotationRevision in revision.AnnotationRevisions.Where(a => !a.IsDeleted))
@@ -17,6 +18,9 @@ public class RevisionViewModel
             Annotations.Add(new AnnotationViewModel(annotationRevision));
         }
     }
+
+    // Reference to parent project
+    public ProjectViewModel? ParentProject { get; internal set; }
 
     public Guid Id => _revision.Id;
     public int Version => _revision.RevisionNumber;

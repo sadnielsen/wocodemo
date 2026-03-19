@@ -22,6 +22,23 @@ public class MainViewModel : INotifyPropertyChanged
 
     public object? SelectedProjectItem => ProjectTreeViewModel.SelectedProjectItem;
 
+    /// <summary>
+    /// Gets the currently active project, whether a project or revision is selected.
+    /// Returns the ProjectViewModel if a project is selected, or the parent project if a revision is selected.
+    /// </summary>
+    public ProjectViewModel? CurrentProject
+    {
+        get
+        {
+            return SelectedProjectItem switch
+            {
+                ProjectViewModel project => project,
+                RevisionViewModel revision => revision.ParentProject,
+                _ => null
+            };
+        }
+    }
+
     public RevisionViewModel? CurrentRevision
     {
         get => _currentRevision;
@@ -45,6 +62,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (e.PropertyName == nameof(ProjectTreeViewModel.SelectedProjectItem))
         {
             OnPropertyChanged(nameof(SelectedProjectItem));
+            OnPropertyChanged(nameof(CurrentProject));
 
             // Update CurrentRevision - let FloorplanViewer handle loading image and annotations
             if (SelectedProjectItem is RevisionViewModel revision)

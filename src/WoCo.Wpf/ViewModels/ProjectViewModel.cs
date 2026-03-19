@@ -10,11 +10,11 @@ public class ProjectViewModel
     public ProjectViewModel(Project project)
     {
         _project = project;
-        
+
         // Convert FloorplanRevisions to RevisionViewModels
         foreach (var revision in project.FloorplanRevisions.OrderBy(r => r.RevisionNumber))
         {
-            Revisions.Add(new RevisionViewModel(revision));
+            Revisions.Add(new RevisionViewModel(revision, this));
         }
     }
 
