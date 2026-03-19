@@ -20,10 +20,10 @@ public class AnnotationRevision
     public string Color { get; set; } = "#FF0000";
 
     // Audit / import
-    public string RawCoordinates { get; set; } = string.Empty;
+    public double[] RawCoordinates { get; set; } = [];
 
     // Canonieke interne opslag
-    public string NormalizedCoordinates { get; set; } = string.Empty;
+    public double[] NormalizedCoordinates { get; set; } = [];
 
     // Semantisch verwijderen in een revisie
     public bool IsDeleted { get; set; }

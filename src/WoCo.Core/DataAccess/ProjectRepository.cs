@@ -18,6 +18,7 @@ internal class ProjectRepository : IProjectRepository
 
         return await _context.Projects
             .Include(p => p.FloorplanRevisions)
+                .ThenInclude(fr => fr.AnnotationRevisions)
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync();
     }
@@ -28,6 +29,7 @@ internal class ProjectRepository : IProjectRepository
 
         return await _context.Projects
             .Include(p => p.FloorplanRevisions)
+                .ThenInclude(fr => fr.AnnotationRevisions)
             .Include(p => p.Annotations)
                 .ThenInclude(a => a.Revisions)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -38,6 +40,15 @@ internal class ProjectRepository : IProjectRepository
         var _context = CreateContext;
 
         _context.Projects.Add(project);
+        await _context.SaveChangesAsync();
+        return project;
+    }
+
+    public async Task<Project> UpdateProjectAsync(Project project)
+    {
+        var _context = CreateContext;
+
+        _context.Projects.Update(project);
         await _context.SaveChangesAsync();
         return project;
     }

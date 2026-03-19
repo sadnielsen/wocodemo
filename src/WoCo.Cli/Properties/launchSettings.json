@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "WoCo.Cli": {
+      "commandName": "Project"
+    }
+  }
+}
