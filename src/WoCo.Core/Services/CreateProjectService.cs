@@ -16,7 +16,7 @@ public sealed class CreateProjectRequest
     public CoordinateOriginType SourceOrigin { get; init; } = CoordinateOriginType.TopLeft;
 }
 
-public sealed class CreateProjectService
+public sealed class CreateProjectService : ICreateProjectService
 {
     private readonly IProjectRepository _projectRepository;
 

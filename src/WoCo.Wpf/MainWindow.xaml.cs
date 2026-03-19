@@ -11,9 +11,9 @@ namespace WoCo.Wpf;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
-    private readonly CreateRevisionService _createRevisionService;
+    private readonly ICreateRevisionService _createRevisionService;
 
-    public MainWindow(MainViewModel viewModel, CreateRevisionService createRevisionService)
+    public MainWindow(MainViewModel viewModel, ICreateRevisionService createRevisionService)
     {
         InitializeComponent();
 

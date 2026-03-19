@@ -19,7 +19,7 @@ public sealed class CreateRevisionRequest
     public double OffsetY { get; init; } = 0;
 }
 
-public sealed class CreateRevisionService
+public sealed class CreateRevisionService : ICreateRevisionService
 {
     private readonly IProjectRepository _projectRepository;
 

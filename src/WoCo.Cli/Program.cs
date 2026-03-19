@@ -106,7 +106,7 @@ internal class Program
 
         var (width, height) = ParseDimensions(floorplanPath);
 
-        var createProjectService = serviceProvider.GetRequiredService<CreateProjectService>();
+        var createProjectService = serviceProvider.GetRequiredService<ICreateProjectService>();
 
         var request = new CreateProjectRequest
         {
@@ -125,7 +125,7 @@ internal class Program
     private static async Task LoadAdditionalRevisionsAsync(IServiceProvider serviceProvider, IConfiguration configuration, string prefix, WoCo.Core.Models.Project project)
     {
         var dataDirectory = GetDataDirectory(configuration);
-        var createRevisionService = serviceProvider.GetRequiredService<CreateRevisionService>();
+        var createRevisionService = serviceProvider.GetRequiredService<ICreateRevisionService>();
 
         int revisionNumber = 1;
 

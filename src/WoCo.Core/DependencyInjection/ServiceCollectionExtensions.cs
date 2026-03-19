@@ -23,8 +23,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProjectRepository, ProjectRepository>();
 
         services
-            .AddTransient<CreateProjectService>()
-            .AddTransient<CreateRevisionService>();
+            .AddTransient<ICreateProjectService, CreateProjectService>()
+            .AddTransient<ICreateRevisionService, CreateRevisionService>();
 
         return services;
     }
