@@ -34,6 +34,7 @@ public class AnnotationService : IAnnotationService
                 annotationRevision.FloorplanRevision.Height);
 
             annotationRevision.RawCoordinates = rawCoordinates;
+            annotationRevision.Source = Types.AnnotationRevisionSourceType.ManualAdjusted;
 
             await context.SaveChangesAsync();
 

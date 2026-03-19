@@ -43,8 +43,9 @@ public sealed class CreateRevisionService : ICreateRevisionService
         var latestRevisionNumber = project.FloorplanRevisions.Max(fr => fr.RevisionNumber);
         var newRevisionNumber = latestRevisionNumber + 1;
 
-        var initialFloorplan = project.FloorplanRevisions
-            .First(fr => fr.RevisionNumber == 0);
+        // Transform from the previous revision (latest), not from initial
+        var previousFloorplan = project.FloorplanRevisions
+            .First(fr => fr.RevisionNumber == latestRevisionNumber);
 
         var newFloorplanRevision = new FloorplanRevision
         {
@@ -66,24 +67,45 @@ public sealed class CreateRevisionService : ICreateRevisionService
 
         foreach (var annotation in project.Annotations)
         {
-            var baseAnnotationRevision = annotation.Revisions
-                .FirstOrDefault(r => r.RevisionNumber == 0 && !r.IsDeleted);
+            var previousAnnotationRevision = annotation.Revisions
+                .FirstOrDefault(r => r.RevisionNumber == latestRevisionNumber);
 
-            if (baseAnnotationRevision == null)
+            if (previousAnnotationRevision == null)
                 continue;
 
-            var transformedRawCoordinates = TransformCoordinatesFromInitial(
-                baseAnnotationRevision.Type,
-                baseAnnotationRevision.RawCoordinates,
-                initialFloorplan.Width,
-                initialFloorplan.Height,
-                initialFloorplan.ScaleDenominator,
+            // If annotation was deleted in previous revision, keep it deleted
+            if (previousAnnotationRevision.IsDeleted)
+            {
+                var deletedAnnotationRevision = new AnnotationRevision
+                {
+                    FloorplanRevision = newFloorplanRevision,
+                    RevisionNumber = newRevisionNumber,
+                    Source = AnnotationRevisionSourceType.AutoTransformed,
+                    Label = previousAnnotationRevision.Label,
+                    Description = previousAnnotationRevision.Description,
+                    Type = previousAnnotationRevision.Type,
+                    Color = previousAnnotationRevision.Color,
+                    RawCoordinates = previousAnnotationRevision.RawCoordinates,
+                    NormalizedCoordinates = previousAnnotationRevision.NormalizedCoordinates,
+                    IsDeleted = true,
+                    CreatedAtUtc = now
+                };
+                annotation.Revisions.Add(deletedAnnotationRevision);
+                continue;
+            }
+
+            var transformedRawCoordinates = TransformCoordinatesFromPrevious(
+                previousAnnotationRevision.Type,
+                previousAnnotationRevision.RawCoordinates,
+                previousFloorplan.Width,
+                previousFloorplan.Height,
+                previousFloorplan.ScaleDenominator,
                 request.ScaleDenominator,
                 request.OffsetX,
                 request.OffsetY);
 
             var normalizedCoordinates = NormalizeCoordinates(
-                baseAnnotationRevision.Type,
+                previousAnnotationRevision.Type,
                 transformedRawCoordinates,
                 request.Width,
                 request.Height);
@@ -93,10 +115,10 @@ public sealed class CreateRevisionService : ICreateRevisionService
                 FloorplanRevision = newFloorplanRevision,
                 RevisionNumber = newRevisionNumber,
                 Source = AnnotationRevisionSourceType.AutoTransformed,
-                Label = baseAnnotationRevision.Label,
-                Description = baseAnnotationRevision.Description,
-                Type = baseAnnotationRevision.Type,
-                Color = baseAnnotationRevision.Color,
+                Label = previousAnnotationRevision.Label,
+                Description = previousAnnotationRevision.Description,
+                Type = previousAnnotationRevision.Type,
+                Color = previousAnnotationRevision.Color,
                 RawCoordinates = transformedRawCoordinates,
                 NormalizedCoordinates = normalizedCoordinates,
                 IsDeleted = false,
@@ -128,22 +150,22 @@ public sealed class CreateRevisionService : ICreateRevisionService
             throw new InvalidOperationException("ScaleDenominator must be greater than zero.");
     }
 
-    private static double[] TransformCoordinatesFromInitial(
+    private static double[] TransformCoordinatesFromPrevious(
         AnnotationType type,
-        double[] initialRawCoordinates,
-        double initialWidth,
-        double initialHeight,
-        double initialScaleDenominator,
+        double[] previousRawCoordinates,
+        double previousWidth,
+        double previousHeight,
+        double previousScaleDenominator,
         double newScaleDenominator,
         double offsetX = 0,
         double offsetY = 0)
     {
-      
-        var scaleFactor = initialScaleDenominator / newScaleDenominator;
+
+        var scaleFactor = previousScaleDenominator / newScaleDenominator;
 
         return TransformRawCoordinates(
             type,
-            initialRawCoordinates,
+            previousRawCoordinates,
             scaleFactor,
             offsetX,
             offsetY);
