@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using WoCo.Core.Services;
+using WoCo.Wpf.Controls;
 using WoCo.Wpf.ViewModels;
 using WoCo.Wpf.Views;
 
@@ -13,22 +14,32 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly ICreateRevisionService _createRevisionService;
     private readonly ICreateProjectService _createProjectService;
+    private readonly IAnnotationService _annotationService;
 
-    public MainWindow(MainViewModel viewModel, ICreateRevisionService createRevisionService, ICreateProjectService createProjectService)
+    public MainWindow(MainViewModel viewModel, ICreateRevisionService createRevisionService, ICreateProjectService createProjectService, IAnnotationService annotationService)
     {
         InitializeComponent();
 
         _viewModel = viewModel;
         _createRevisionService = createRevisionService;
         _createProjectService = createProjectService;
+        _annotationService = annotationService;
         DataContext = _viewModel;
 
         Loaded += OnLoaded;
+
+        // Wire up annotation coordinate change event
+        FloorplanViewer.AnnotationCoordinatesChanged += OnAnnotationCoordinatesChanged;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.InitializeAsync();
+    }
+
+    private async void SaveChanges_Click(object sender, RoutedEventArgs e)
+    {
+
     }
 
     private async void NewProject_Click(object sender, RoutedEventArgs e)
@@ -94,6 +105,26 @@ public partial class MainWindow : Window
             {
                 MessageBox.Show($"Error creating revision: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+    }
+
+    private async void OnAnnotationCoordinatesChanged(object? sender, AnnotationCoordinatesChangedEventArgs e)
+    {
+        try
+        {
+            // Persist to database
+            await _annotationService.UpdateAnnotationCoordinatesAsync(
+                e.AnnotationId,
+                e.NewNormalizedCoordinates);
+
+            // Update the ViewModel to reflect the change in memory
+            e.Annotation.UpdateCoordinates(e.NewNormalizedCoordinates);
+
+            System.Diagnostics.Debug.WriteLine($"Successfully persisted and updated ViewModel for annotation {e.AnnotationId}");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error saving annotation coordinates: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

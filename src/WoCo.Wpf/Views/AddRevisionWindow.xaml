@@ -87,6 +87,16 @@
                                FontWeight="SemiBold" 
                                Margin="0,0,0,10" />
 
+                    <TextBlock Text="Scale Denominator:" 
+                               Foreground="Gray"
+                               FontSize="11"
+                               Margin="0,0,0,5" />
+
+                    <TextBox x:Name="ScaleDenominatorTextBox"
+                             Text="1.0"
+                             VerticalContentAlignment="Center"
+                             Margin="0,0,0,10" />
+
                     <TextBlock Text="Offset coordinates (in pixels):" 
                                Foreground="Gray"
                                FontSize="11"

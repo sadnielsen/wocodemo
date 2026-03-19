@@ -50,7 +50,7 @@ public partial class CreateProjectWindow : Window
         var openFileDialog = new OpenFileDialog
         {
             Title = "Select Annotations File",
-            Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+            Filter = "All Files (*.*)|*.*",
             CheckFileExists = true
         };
 
@@ -133,6 +133,13 @@ public partial class CreateProjectWindow : Window
 
         try
         {
+            // Parse scale denominator
+            if (!double.TryParse(ScaleDenominatorTextBox.Text, out var scaleDenominator) || scaleDenominator <= 0)
+            {
+                MessageBox.Show("Invalid Scale Denominator value. Please enter a valid positive number.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Create request
             Request = new CreateProjectRequest
             {
@@ -140,7 +147,8 @@ public partial class CreateProjectWindow : Window
                 FloorplanPath = _selectedFloorplanPath,
                 AnnotationsPath = _selectedAnnotationsPath,
                 Width = _imageWidth,
-                Height = _imageHeight
+                Height = _imageHeight,
+                ScaleDenominator = scaleDenominator
             };
 
             DialogResult = true;

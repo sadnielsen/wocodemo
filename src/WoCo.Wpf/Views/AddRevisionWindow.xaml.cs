@@ -157,6 +157,13 @@ public partial class AddRevisionWindow : Window
 
         try
         {
+            // Parse scale denominator
+            if (!double.TryParse(ScaleDenominatorTextBox.Text, out var scaleDenominator) || scaleDenominator <= 0)
+            {
+                MessageBox.Show("Invalid Scale Denominator value. Please enter a valid positive number.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Parse offset values
             if (!double.TryParse(OffsetXTextBox.Text, out var offsetX))
             {
@@ -177,6 +184,7 @@ public partial class AddRevisionWindow : Window
                 FloorplanPath = _selectedFilePath,
                 Width = _imageWidth,
                 Height = _imageHeight,
+                ScaleDenominator = scaleDenominator,
                 OffsetX = offsetX,
                 OffsetY = offsetY
             };

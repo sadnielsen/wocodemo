@@ -86,6 +86,20 @@
                            TextWrapping="Wrap" />
             </StackPanel>
 
+            <!-- Scale Denominator -->
+            <StackPanel Grid.Row="4" Margin="0,10,0,5">
+                <TextBlock Text="Scale Denominator:" FontWeight="SemiBold" Margin="0,0,0,5" />
+                <TextBox x:Name="ScaleDenominatorTextBox" 
+                         Text="1.0"
+                         VerticalContentAlignment="Center" />
+                <TextBlock Text="Enter the scale denominator for the floorplan (e.g., 100 for 1:100 scale)."
+                           FontSize="10"
+                           FontStyle="Italic"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           Margin="0,3,0,0" />
+            </StackPanel>
+
             <!-- Buttons -->
             <StackPanel Grid.Row="5" 
                         Orientation="Horizontal" 

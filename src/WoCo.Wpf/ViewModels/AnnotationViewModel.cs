@@ -1,9 +1,10 @@
+using System.ComponentModel;
 using WoCo.Core.Models;
 using WoCo.Core.Types;
 
 namespace WoCo.Wpf.ViewModels;
 
-public class AnnotationViewModel
+public class AnnotationViewModel : INotifyPropertyChanged
 {
     private readonly AnnotationRevision _annotationRevision;
 
@@ -21,7 +22,19 @@ public class AnnotationViewModel
     public double[] RawCoordinates => _annotationRevision.RawCoordinates;
     public bool IsDeleted => _annotationRevision.IsDeleted;
     public DateTime CreatedAtUtc => _annotationRevision.CreatedAtUtc;
-    
+
     // For rendering
     public bool IsVisible => !IsDeleted;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// Updates the normalized coordinates of this annotation.
+    /// This should be called after the coordinates are persisted to the database.
+    /// </summary>
+    public void UpdateCoordinates(double[] newNormalizedCoordinates)
+    {
+        _annotationRevision.NormalizedCoordinates = newNormalizedCoordinates;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NormalizedCoordinates)));
+    }
 }

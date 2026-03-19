@@ -61,6 +61,7 @@ public partial class FloorplanViewer : UserControl
     }
 
     public event EventHandler<AnnotationViewModel>? AnnotationSelected;
+    public event EventHandler<AnnotationCoordinatesChangedEventArgs>? AnnotationCoordinatesChanged;
 
     private static void OnSelectedAnnotationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -519,7 +520,7 @@ public partial class FloorplanViewer : UserControl
         if (_isDragging && _draggedElement is Canvas container && e.RightButton == MouseButtonState.Pressed)
         {
             var currentPosition = e.GetPosition(AnnotationsCanvas);
-            var totalOffset = currentPosition - _dragStartPoint;
+            Vector totalOffset = currentPosition - _dragStartPoint;
 
             // Move all children in the container together
             foreach (var child in container.Children)
@@ -577,9 +578,14 @@ public partial class FloorplanViewer : UserControl
             // Save the new position
             if (_draggedAnnotation != null)
             {
-                System.Diagnostics.Debug.WriteLine($"Annotation {_draggedAnnotation.Label} moved. New position should be saved.");
-                // TODO: Implement a method to update the annotation coordinates
-                // UpdateAnnotationCoordinates(_draggedAnnotation, newNormalizedCoordinates);
+                var currentPosition = e.GetPosition(AnnotationsCanvas);
+                Vector totalOffset = currentPosition - _dragStartPoint;
+
+                var newNormalizedCoords = CalculateNewNormalizedCoordinates(
+                    _draggedAnnotation.NormalizedCoordinates, 
+                    totalOffset);
+
+                UpdateAnnotationCoordinates(_draggedAnnotation, newNormalizedCoords);
             }
 
             // Reset drag state
@@ -634,6 +640,56 @@ public partial class FloorplanViewer : UserControl
                 }
             }
         }
+    }
+
+    private double[] CalculateNewNormalizedCoordinates(double[] originalNormalized, Vector pixelOffset)
+    {
+        var canvasWidth = AnnotationsCanvas.Width;
+        var canvasHeight = AnnotationsCanvas.Height;
+
+        var newNormalized = new double[originalNormalized.Length];
+
+        for (int i = 0; i < originalNormalized.Length; i++)
+        {
+            if (i % 2 == 0) // X coordinate
+            {
+                var pixelValue = originalNormalized[i] * canvasWidth + pixelOffset.X;
+                newNormalized[i] = pixelValue / canvasWidth;
+            }
+            else // Y coordinate
+            {
+                var pixelValue = originalNormalized[i] * canvasHeight + pixelOffset.Y;
+                newNormalized[i] = pixelValue / canvasHeight;
+            }
+        }
+
+        return newNormalized;
+    }
+
+    private void UpdateAnnotationCoordinates(AnnotationViewModel annotation, double[] newNormalizedCoordinates)
+    {
+        System.Diagnostics.Debug.WriteLine(
+            $"Annotation {annotation.Label} coordinates changed from " +
+            $"{string.Join(", ", annotation.NormalizedCoordinates)} to " +
+            $"{string.Join(", ", newNormalizedCoordinates)}");
+
+        // Raise event for parent ViewModel to handle persistence
+        AnnotationCoordinatesChanged?.Invoke(this, 
+            new AnnotationCoordinatesChangedEventArgs(annotation, newNormalizedCoordinates));
+    }
+}
+
+// Event args class
+public class AnnotationCoordinatesChangedEventArgs : EventArgs
+{
+    public AnnotationViewModel Annotation { get; }
+    public Guid AnnotationId => Annotation.Id;
+    public double[] NewNormalizedCoordinates { get; }
+
+    public AnnotationCoordinatesChangedEventArgs(AnnotationViewModel annotation, double[] newCoordinates)
+    {
+        Annotation = annotation;
+        NewNormalizedCoordinates = newCoordinates;
     }
 }
 
