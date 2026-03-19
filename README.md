@@ -1,65 +1,174 @@
-# wocodemo — Floorplan Annotator
+# WoCo
 
-A **WPF + MVVM + Canvas** application to visualize annotated floorplans.
+A **multi-project solution** for managing and visualizing annotated floorplans with revision history. 
+The solution includes a **WPF desktop application** for interactive visualization and a **CLI tool** for batch importing and database management.
 
 ## Features
 
-- **Create a Project** – supply a name, upload a floorplan image and an annotations JSON file.  
-- **Persist to SQLite** – every project (floorplan path, annotations, metadata) is stored in a local SQLite database.  
-- **Canvas visualization** – the floorplan image is rendered on a scrollable WPF Canvas; each annotation is drawn as a rectangle, polygon, point, or label with a configurable color.  
-- **Annotation table** – a lower panel lists all annotations for the selected project (label, type, coordinates, color swatch).  
-- **Delete projects** – remove projects with a confirmation prompt.
+- **Multi-revision support** – Track changes to floorplans over time with automatic revision management
+- **Create projects** – Import floorplan images with annotations and metadata
+- **Persist to SQLite** – Projects, floorplan revisions, annotations, and revision history stored in a local database
+- **Canvas visualization** – WPF application renders floorplans on a scrollable canvas with colored annotations (rectangles, polygons, points)
+- **Coordinate transformation** – Automatic conversion from pixel coordinates to real-world coordinates using scale and offset metadata
+- **CLI batch import** – Command-line tool for importing multiple projects and revisions
+- **Database management** – Purge and inspect database contents via CLI
 
-## Architecture
+## Project Structure
+
+The solution consists of three projects:
 
 ```
-src/FloorplanAnnotator/
-├── Commands/         RelayCommand (ICommand)
-├── Converters/       BoolToVisibilityConverter
-├── Models/           Project, Annotation
-├── Services/         AppDbContext (EF Core/SQLite), ProjectRepository, AnnotationParser
-├── ViewModels/       BaseViewModel, MainViewModel, CreateProjectViewModel
-└── Views/            MainWindow, CreateProjectView, AnnotationCanvas (UserControl)
+src/
+├── WoCo.Core/              # Shared core library
+│   ├── DataAccess/         # EF Core DbContext, repositories, configurations
+│   ├── DependencyInjection/# Service registration extensions
+│   ├── Models/             # Domain models (Project, Annotation, FloorplanRevision, AnnotationRevision)
+│   ├── Services/           # Business logic (CreateProjectService, CreateRevisionService, AnnotationParser)
+│   └── Types/              # Enums and value types (CoordinateSystemType, CoordinateOriginType)
+│
+├── WoCo.Wpf/               # WPF desktop application
+│   ├── Controls/           # Custom WPF controls
+│   ├── Converters/         # Value converters for data binding
+│   ├── ViewModels/         # MVVM ViewModels
+│   └── Views/              # XAML views and windows
+│
+└── WoCo.Cli/               # Command-line tool
+    ├── Program.cs          # Main CLI entry point
+    └── appsettings.json    # Configuration (data folder path, logging)
 ```
 
-### MVVM
+### Core Architecture
 
-| Layer | Responsibility |
-|-------|----------------|
-| **Model** | `Project`, `Annotation` – plain C# classes, persisted via EF Core |
-| **ViewModel** | `MainViewModel` – project list, selection, commands; `CreateProjectViewModel` – dialog logic |
-| **View** | `MainWindow.xaml` – layout, toolbar, project list, canvas; `CreateProjectView.xaml` – new project dialog; `AnnotationCanvas.xaml` – custom `UserControl` that draws the floorplan + annotations |
+**WoCo.Core** provides the foundation:
 
-## Annotations JSON format
+| Component | Responsibility |
+|-----------|----------------|
+| **Models** | `Project`, `Annotation`, `FloorplanRevision`, `AnnotationRevision` – EF Core entities |
+| **DataAccess** | `AppDbContext` (EF Core/SQLite), `ProjectRepository`, entity configurations |
+| **Services** | `CreateProjectService` – project creation with initial floorplan<br>`CreateRevisionService` – add new floorplan revisions<br>`AnnotationParser` – parse JSON annotations |
+| **Types** | Enums for coordinate systems (Pixels, RealWorld) and origins (TopLeft, BottomLeft) |
 
-The annotations file is a JSON array.  Each item can have the following fields:
+**WoCo.Wpf** implements MVVM pattern:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `label` | string | Human-readable name |
-| `type` | string | `rectangle` \| `polygon` \| `point` \| `label` |
-| `coordinates` | string | Comma-separated numbers. Rectangle: `x1,y1,x2,y2`. Polygon: `x1,y1,x2,y2,...`. Point: `x,y`. Label: `x,y`. |
-| `color` | string | CSS/WPF color string, e.g. `#FF0000` |
+| Layer | Components |
+|-------|------------|
+| **View** | `MainWindow` – main application window with project list and canvas<br>`AnnotationCanvas` – custom control for rendering floorplans and annotations |
+| **ViewModel** | ViewModels for managing UI state and commands |
+| **Converters** | Data binding value converters |
 
-Example:
-```json
-[
-  { "label": "Living Room", "type": "rectangle", "coordinates": "50,80,300,250", "color": "#2196F3" },
-  { "label": "Front Door",  "type": "point",     "coordinates": "175,80",         "color": "#4CAF50" },
-  { "label": "Terrace",     "type": "polygon",   "coordinates": "310,80,450,80,450,180,310,180", "color": "#FF9800" }
-]
-```
+**WoCo.Cli** provides command-line interface:
+- Import projects from file system
+- Create multiple revisions from numbered files
+- Purge database contents
+- Dump database for inspection
 
-## Requirements
+## CLI Usage
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8) (Windows)
-- Windows 10 / 11 (WPF is Windows-only)
+The CLI tool (`WoCo.Cli`) is used for batch operations and database management.
 
-## Build & Run
+### Build & Run CLI
 
 ```bash
-cd src/FloorplanAnnotator
+cd src/WoCo.Cli
 dotnet run
 ```
 
-The SQLite database is stored at `%LOCALAPPDATA%\FloorplanAnnotator\projects.db`.
+The CLI accepts command-line arguments:
+
+`purge`  
+
+Deletes all data from the database.  
+
+`load=<number>`  
+
+Import data as new project with initial floorplan and annotations, and subsequent revisions.
+
+This imports a project and all its revisions from the data folder. Files should be named:
+- `<number>.0-floorplan.png` – Initial floorplan image
+- `<number>.0-floorplan.json` – Initial floorplan metadata
+- `<number>.0-annotations.json` – Initial annotations
+- `<number>.1-floorplan.png` – Second revision floorplan (optional)
+- `<number>.1-floorplan.json` – Second revision metadata (optional)
+- And so on...
+
+Combined arguments:
+
+```bash
+dotnet run purge load=sample
+```
+
+Purges the database then loads the project with prefix "sample".
+
+### Configuration
+
+Edit `appsettings.json` to configure the CLI:
+
+```json
+{
+  "DataFolder": "TestData",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning"
+    }
+  }
+}
+```
+
+- **DataFolder** – Path to folder containing floorplan images and metadata files (relative or absolute)
+
+### Floorplan Metadata Format
+
+Each floorplan requires a JSON metadata file (`<prefix>.<revision>-floorplan.json`):
+
+```json
+{
+  "scaleDenominator": 100.0,
+  "offsetX": 0.0,
+  "offsetY": 0.0
+}
+```
+
+## WPF Application Usage
+
+### Build & Run WPF App
+
+```bash
+cd src/WoCo.Wpf
+dotnet run
+```
+
+### Features
+
+- **Project List** – View all imported projects
+- **Canvas Visualization** – Select a project to view floorplan with annotations
+- **Revision Navigation** – Navigate between different revisions of a floorplan
+- **Annotation Display** – Annotations rendered as colored shapes on the canvas
+- **Coordinate Display** – Shows both pixel and real-world coordinates
+
+## Requirements
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10)
+- Windows 10 / 11 (WPF is Windows-only)
+
+## Database Location
+
+The SQLite database is stored at:
+```
+%LOCALAPPDATA%\WoCo\woco.db
+```
+
+Or as configured in the connection string in `WoCo.Core\DataAccess\AppDbContextDesignFactory.cs`.
+
+## Development
+
+### Add EF Core Migrations
+
+```bash
+cd src/WoCo.Core
+dotnet ef migrations add <MigrationName> --startup-project ../WoCo.Cli/WoCo.Cli.csproj
+```
+
+### Update Database
+
+The database is automatically migrated when running either the WPF app or CLI tool.
+
