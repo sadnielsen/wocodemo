@@ -134,6 +134,21 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<int>("RevisionNumber")
                         .HasColumnType("INTEGER");
 
+                    b.Property<double>("ScaleDenominator")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(1.0);
+
+                    b.Property<double>("OffsetX")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<double>("OffsetY")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
+
                     b.Property<double>("Width")
                         .HasColumnType("REAL");
 

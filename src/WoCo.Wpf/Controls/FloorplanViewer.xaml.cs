@@ -424,14 +424,14 @@ public partial class FloorplanViewer : UserControl
 
         stackPanel.Children.Add(new TextBlock
         {
-            Text = $"Raw coordinates: {annotation.RawCoordinates}",
+            Text = $"Raw coordinates: {string.Join(", ", annotation.RawCoordinates)}",
             FontSize = 11,
             Foreground = Brushes.Gray
         });
 
         stackPanel.Children.Add(new TextBlock
         {
-            Text = $"Normalized coordinates: {annotation.NormalizedCoordinates}",
+            Text = $"Normalized coordinates: {string.Join(", ", annotation.NormalizedCoordinates)}",
             FontSize = 11,
             Foreground = Brushes.Gray
         });

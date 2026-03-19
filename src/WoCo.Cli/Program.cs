@@ -12,6 +12,40 @@ namespace WoCo.Cli;
 
 internal class Program
 {
+    private record FloorplanMetaData
+    {
+        public double ScaleDenominator { get; init; } = 1.0;
+        public double OffsetX { get; init; } = 0.0;
+        public double OffsetY { get; init; } = 0.0;
+
+        public static FloorplanMetaData FromJson(string jsonPath)
+        {
+            var jsonText = File.ReadAllText(jsonPath);
+            var floorplanJson = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonText);
+            double scaleDenominator = 1.0;
+            double offsetX = 0.0;
+            double offsetY = 0.0;
+            if (floorplanJson.TryGetProperty("scaleDenominator", out var scaleElement))
+            {
+                scaleDenominator = scaleElement.GetDouble();
+            }
+            if (floorplanJson.TryGetProperty("offsetX", out var offsetXElement))
+            {
+                offsetX = offsetXElement.GetDouble();
+            }
+            if (floorplanJson.TryGetProperty("offsetY", out var offsetYElement))
+            {
+                offsetY = offsetYElement.GetDouble();
+            }
+            return new FloorplanMetaData
+            {
+                ScaleDenominator = scaleDenominator,
+                OffsetX = offsetX,
+                OffsetY = offsetY
+            };
+        }
+    }
+
     static async Task Main(string[] args)
     {
         using var host = Host.CreateDefaultBuilder(args)
@@ -29,22 +63,6 @@ internal class Program
 
         bool shouldPurge = ShouldPurge(args);
         var loadPrefix = GetLoadPrefix(args);
-
-        //if (shouldPurge)
-        //{
-        //    Console.WriteLine("Do you want to purge the database? (y/n)");
-        //    var response = Console.ReadLine()?.Trim().ToLower();
-
-        //    if (response == "y" || response == "yes")
-        //    {
-        //        shouldPurge = true;
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("Operation cancelled. Exiting...");
-        //        return;
-        //    }
-        //}
 
         if (shouldPurge)
         {
@@ -93,6 +111,7 @@ internal class Program
         var dataDirectory = GetDataDirectory(configuration);
         var floorplanPath = Path.Combine(dataDirectory, $"{prefix}.0-floorplan.png");
         var annotationsPath = Path.Combine(dataDirectory, $"{prefix}.0-annotations.json");
+        var floorplanJsonPath = Path.Combine(dataDirectory, $"{prefix}.0-floorplan.json");
 
         if (!File.Exists(floorplanPath))
         {
@@ -104,8 +123,15 @@ internal class Program
             throw new FileNotFoundException($"Annotations file not found: {annotationsPath}");
         }
 
-        var (width, height) = ParseDimensions(floorplanPath);
+        if (!File.Exists(floorplanJsonPath))
+        {
+            throw new FileNotFoundException($"Floorplan metadata file not found: {floorplanJsonPath}");
+        }
 
+        var floorplanMetaData = FloorplanMetaData.FromJson(floorplanJsonPath);
+
+        var (width, height) = ParseDimensions(floorplanPath);
+       
         var createProjectService = serviceProvider.GetRequiredService<ICreateProjectService>();
 
         var request = new CreateProjectRequest
@@ -115,6 +141,9 @@ internal class Program
             AnnotationsPath = annotationsPath,
             Width = width,
             Height = height,
+            ScaleDenominator = floorplanMetaData.ScaleDenominator,
+            OffsetX = floorplanMetaData.OffsetX,
+            OffsetY = floorplanMetaData.OffsetY,
             SourceCoordinateSystem = CoordinateSystemType.Pixels,
             SourceOrigin = CoordinateOriginType.TopLeft
         };
@@ -138,9 +167,17 @@ internal class Program
                 break;
             }
 
+            var floorplanJsonPath = Path.Combine(dataDirectory, $"{prefix}.{revisionNumber}-floorplan.json");
+            
+            if (!File.Exists(floorplanJsonPath))
+            {
+                throw new FileNotFoundException($"Floorplan metadata file not found: {floorplanJsonPath}");
+            }
+
             Console.WriteLine($"Creating revision {revisionNumber} from {Path.GetFileName(floorplanPath)}");
 
             var (width, height) = ParseDimensions(floorplanPath);
+            var floorplanMetaData = FloorplanMetaData.FromJson(floorplanJsonPath);
 
             var request = new CreateRevisionRequest
             {
@@ -148,6 +185,9 @@ internal class Program
                 FloorplanPath = floorplanPath,
                 Width = width,
                 Height = height,
+                ScaleDenominator = floorplanMetaData.ScaleDenominator,
+                OffsetX = floorplanMetaData.OffsetX,
+                OffsetY = floorplanMetaData.OffsetY,
                 SourceCoordinateSystem = CoordinateSystemType.Pixels,
                 SourceOrigin = CoordinateOriginType.TopLeft
             };
@@ -225,6 +265,7 @@ internal class Program
             {
                 Console.WriteLine($"  FloorPlanRevision v{fp.RevisionNumber}");
                 Console.WriteLine($"    Size: {fp.Width} x {fp.Height}");
+                Console.WriteLine($"    ScaleDenominator: {fp.ScaleDenominator}");
                 Console.WriteLine($"    FileName: {fp.FileName}");
                 Console.WriteLine($"    FileType: {fp.FileType}");
                 Console.WriteLine($"    FileBytes: {fp.FileContent.Length}");
