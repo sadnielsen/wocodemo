@@ -86,7 +86,6 @@ public sealed class CreateRevisionService : ICreateRevisionService
                     Type = previousAnnotationRevision.Type,
                     Color = previousAnnotationRevision.Color,
                     RawCoordinates = previousAnnotationRevision.RawCoordinates,
-                    NormalizedCoordinates = previousAnnotationRevision.NormalizedCoordinates,
                     IsDeleted = true,
                     CreatedAtUtc = now
                 };
@@ -104,12 +103,6 @@ public sealed class CreateRevisionService : ICreateRevisionService
                 request.OffsetX,
                 request.OffsetY);
 
-            var normalizedCoordinates = NormalizeCoordinates(
-                previousAnnotationRevision.Type,
-                transformedRawCoordinates,
-                request.Width,
-                request.Height);
-
             var newAnnotationRevision = new AnnotationRevision
             {
                 FloorplanRevision = newFloorplanRevision,
@@ -120,7 +113,6 @@ public sealed class CreateRevisionService : ICreateRevisionService
                 Type = previousAnnotationRevision.Type,
                 Color = previousAnnotationRevision.Color,
                 RawCoordinates = transformedRawCoordinates,
-                NormalizedCoordinates = normalizedCoordinates,
                 IsDeleted = false,
                 CreatedAtUtc = now
             };
@@ -229,111 +221,4 @@ public sealed class CreateRevisionService : ICreateRevisionService
         }
     }
 
-    private static double[] DenormalizeCoordinates(
-        AnnotationType type,
-        double[] normalizedCoordinates,
-        double width,
-        double height)
-    {
-        var numbers = normalizedCoordinates;
-
-        switch (type)
-        {
-            case AnnotationType.Point:
-            case AnnotationType.Label:
-                {
-                    if (numbers.Length != 2)
-                        throw new InvalidOperationException("Point/Label requires x,y.");
-
-                    var x = numbers[0] * width;
-                    var y = numbers[1] * height;
-                    return [x, y];
-                }
-
-            case AnnotationType.Rectangle:
-                {
-                    if (numbers.Length != 4)
-                        throw new InvalidOperationException("Rectangle requires x,y,width,height.");
-
-                    var x = numbers[0] * width;
-                    var y = numbers[1] * height;
-                    var w = numbers[2] * width;
-                    var h = numbers[3] * height;
-                    return [x, y, w, h];
-                }
-
-            case AnnotationType.Polygon:
-                {
-                    if (numbers.Length < 6 || numbers.Length % 2 != 0)
-                        throw new InvalidOperationException("Polygon requires x,y pairs.");
-
-                    var denormalized = new List<double>();
-
-                    for (var i = 0; i < numbers.Length; i += 2)
-                    {
-                        denormalized.Add(numbers[i] * width);
-                        denormalized.Add(numbers[i + 1] * height);
-                    }
-
-                    return denormalized.ToArray();
-                }
-
-            default:
-                throw new NotSupportedException($"Unsupported annotation type: {type}");
-        }
     }
-
-    private static double[] NormalizeCoordinates(
-        AnnotationType type,
-        double[] pixelCoordinates,
-        double width,
-        double height)
-    {
-        var numbers = pixelCoordinates;
-
-        switch (type)
-        {
-            case AnnotationType.Point:
-            case AnnotationType.Label:
-                {
-                    if (numbers.Length != 2)
-                        throw new InvalidOperationException("Point/Label requires x,y.");
-
-                    var x = numbers[0] / width;
-                    var y = numbers[1] / height;
-                    return [x, y];
-                }
-
-            case AnnotationType.Rectangle:
-                {
-                    if (numbers.Length != 4)
-                        throw new InvalidOperationException("Rectangle requires x,y,width,height.");
-
-                    var x = numbers[0] / width;
-                    var y = numbers[1] / height;
-                    var w = numbers[2] / width;
-                    var h = numbers[3] / height;
-                    return [x, y, w, h];
-                }
-
-            case AnnotationType.Polygon:
-                {
-                    if (numbers.Length < 6 || numbers.Length % 2 != 0)
-                        throw new InvalidOperationException("Polygon requires x,y pairs.");
-
-                    var normalized = new List<double>();
-
-                    for (var i = 0; i < numbers.Length; i += 2)
-                    {
-                        normalized.Add(numbers[i] / width);
-                        normalized.Add(numbers[i + 1] / height);
-                    }
-
-                    return normalized.ToArray();
-                }
-
-            default:
-                throw new NotSupportedException($"Unsupported annotation type: {type}");
-        }
-    }
-}

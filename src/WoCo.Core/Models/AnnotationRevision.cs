@@ -19,11 +19,8 @@ public class AnnotationRevision
     public AnnotationType Type { get; set; } = AnnotationType.Rectangle;
     public string Color { get; set; } = "#FF0000";
 
-    // Audit / import
+    // Coordinates stored in pixels relative to floorplan dimensions
     public double[] RawCoordinates { get; set; } = [];
-
-    // Canonieke interne opslag
-    public double[] NormalizedCoordinates { get; set; } = [];
 
     // Semantisch verwijderen in een revisie
     public bool IsDeleted { get; set; }

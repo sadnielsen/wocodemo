@@ -86,7 +86,6 @@ namespace WoCo.Core.DataAccess.Migrations
                     Type = table.Column<string>(type: "TEXT", nullable: false),
                     Color = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
                     RawCoordinates = table.Column<string>(type: "TEXT", nullable: false),
-                    NormalizedCoordinates = table.Column<string>(type: "TEXT", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },

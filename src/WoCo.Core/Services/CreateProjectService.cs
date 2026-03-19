@@ -70,14 +70,6 @@ public sealed class CreateProjectService : ICreateProjectService
                 Id = Guid.NewGuid()
             };
 
-            var normalizedCoordinates = NormalizeCoordinates(
-                imported.Type,
-                imported.RawCoordinates,
-                floorplanRevision.Width,
-                floorplanRevision.Height,
-                request.SourceCoordinateSystem,
-                request.SourceOrigin);
-
             var annotationRevision = new AnnotationRevision
             {
                 FloorplanRevision = floorplanRevision,
@@ -87,7 +79,6 @@ public sealed class CreateProjectService : ICreateProjectService
                 Type = imported.Type,
                 Color = imported.Color,
                 RawCoordinates = imported.RawCoordinates,
-                NormalizedCoordinates = normalizedCoordinates,
                 IsDeleted = false,
                 CreatedAtUtc = now
             };
@@ -110,102 +101,4 @@ public sealed class CreateProjectService : ICreateProjectService
         if (!File.Exists(request.AnnotationsPath))
             throw new FileNotFoundException("Annotations file not found.", request.AnnotationsPath);
     }
-
-    private static double[] NormalizeCoordinates(
-        AnnotationType type,
-        double[] rawCoordinates,
-        double sourceWidth,
-        double sourceHeight,
-        CoordinateSystemType coordinateSystem,
-        CoordinateOriginType origin)
-    {
-        var numbers = rawCoordinates;
-
-        if (coordinateSystem == CoordinateSystemType.Normalized &&
-            origin == CoordinateOriginType.TopLeft)
-        {
-            return numbers;
-        }
-
-        switch (type)
-        {
-            case AnnotationType.Point:
-            case AnnotationType.Label:
-            {
-                if (numbers.Length != 2)
-                    throw new InvalidOperationException("Point/Label requires x,y.");
-
-                var x = NormalizeX(numbers[0], sourceWidth, coordinateSystem);
-                var y = NormalizeY(numbers[1], sourceHeight, coordinateSystem, origin);
-                return [x, y];
-            }
-
-            case AnnotationType.Rectangle:
-            {
-                if (numbers.Length != 4)
-                    throw new InvalidOperationException("Rectangle requires x,y,width,height.");
-
-                var x = NormalizeX(numbers[0], sourceWidth, coordinateSystem);
-                var y = NormalizeY(numbers[1], sourceHeight, coordinateSystem, origin);
-                var w = NormalizeLength(numbers[2], sourceWidth, coordinateSystem);
-                var h = NormalizeLength(numbers[3], sourceHeight, coordinateSystem);
-                return [x, y, w, h];
-            }
-
-            case AnnotationType.Polygon:
-            {
-                if (numbers.Length < 6 || numbers.Length % 2 != 0)
-                    throw new InvalidOperationException("Polygon requires x,y pairs.");
-
-                var normalized = new List<double>();
-
-                for (var i = 0; i < numbers.Length; i += 2)
-                {
-                    normalized.Add(NormalizeX(numbers[i], sourceWidth, coordinateSystem));
-                    normalized.Add(NormalizeY(numbers[i + 1], sourceHeight, coordinateSystem, origin));
-                }
-
-                return normalized.ToArray();
-            }
-
-            default:
-                throw new NotSupportedException($"Unsupported annotation type: {type}");
-        }
-    }
-
-    private static double NormalizeX(double value, double width, CoordinateSystemType system)
-        => system switch
-        {
-            CoordinateSystemType.Pixels => value / width,
-            CoordinateSystemType.Millimeters => value / width,
-            CoordinateSystemType.Normalized => value,
-            _ => throw new NotSupportedException()
-        };
-
-    private static double NormalizeY(double value, double height, CoordinateSystemType system, CoordinateOriginType origin)
-    {
-        var normalized = system switch
-        {
-            CoordinateSystemType.Pixels => value / height,
-            CoordinateSystemType.Millimeters => value / height,
-            CoordinateSystemType.Normalized => value,
-            _ => throw new NotSupportedException()
-        };
-
-        return origin switch
-        {
-            CoordinateOriginType.TopLeft => normalized,
-            CoordinateOriginType.BottomLeft => 1.0 - normalized,
-            _ => throw new NotSupportedException()
-        };
-    }
-
-    private static double NormalizeLength(double value, double size, CoordinateSystemType system)
-        => system switch
-        {
-            CoordinateSystemType.Pixels => value / size,
-            CoordinateSystemType.Millimeters => value / size,
-            CoordinateSystemType.Normalized => value,
-            _ => throw new NotSupportedException()
-        };
 }

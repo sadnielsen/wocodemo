@@ -115,10 +115,10 @@ public partial class MainWindow : Window
             // Persist to database
             await _annotationService.UpdateAnnotationCoordinatesAsync(
                 e.AnnotationId,
-                e.NewNormalizedCoordinates);
+                e.NewRawCoordinates);
 
             // Update the ViewModel to reflect the change in memory
-            e.Annotation.UpdateCoordinates(e.NewNormalizedCoordinates);
+            e.Annotation.UpdateCoordinates(e.NewRawCoordinates);
 
             System.Diagnostics.Debug.WriteLine($"Successfully persisted and updated ViewModel for annotation {e.AnnotationId}");
         }

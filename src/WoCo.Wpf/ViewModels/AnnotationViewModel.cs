@@ -18,7 +18,6 @@ public class AnnotationViewModel : INotifyPropertyChanged
     public string? Description => _annotationRevision.Description;
     public AnnotationType Type => _annotationRevision.Type;
     public string Color => _annotationRevision.Color;
-    public double[] NormalizedCoordinates => _annotationRevision.NormalizedCoordinates;
     public double[] RawCoordinates => _annotationRevision.RawCoordinates;
     public bool IsDeleted => _annotationRevision.IsDeleted;
     public DateTime CreatedAtUtc => _annotationRevision.CreatedAtUtc;
@@ -29,12 +28,12 @@ public class AnnotationViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Updates the normalized coordinates of this annotation.
+    /// Updates the raw coordinates of this annotation.
     /// This should be called after the coordinates are persisted to the database.
     /// </summary>
-    public void UpdateCoordinates(double[] newNormalizedCoordinates)
+    public void UpdateCoordinates(double[] newRawCoordinates)
     {
-        _annotationRevision.NormalizedCoordinates = newNormalizedCoordinates;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NormalizedCoordinates)));
+        _annotationRevision.RawCoordinates = newRawCoordinates;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RawCoordinates)));
     }
 }

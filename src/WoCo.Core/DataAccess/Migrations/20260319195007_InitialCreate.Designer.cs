@@ -11,7 +11,7 @@ using WoCo.Core.DataAccess;
 namespace WoCo.Core.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260315203638_InitialCreate")]
+    [Migration("20260319195007_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -66,10 +66,6 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NormalizedCoordinates")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RawCoordinates")
@@ -127,6 +123,16 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<double>("Height")
                         .HasColumnType("REAL");
 
+                    b.Property<double>("OffsetX")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<double>("OffsetY")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
+
                     b.Property<string>("Origin")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -136,6 +142,11 @@ namespace WoCo.Core.DataAccess.Migrations
 
                     b.Property<int>("RevisionNumber")
                         .HasColumnType("INTEGER");
+
+                    b.Property<double>("ScaleDenominator")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(1.0);
 
                     b.Property<double>("Width")
                         .HasColumnType("REAL");

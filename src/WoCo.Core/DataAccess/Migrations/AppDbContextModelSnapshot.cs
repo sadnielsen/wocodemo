@@ -65,10 +65,6 @@ namespace WoCo.Core.DataAccess.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("NormalizedCoordinates")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("RawCoordinates")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -124,6 +120,16 @@ namespace WoCo.Core.DataAccess.Migrations
                     b.Property<double>("Height")
                         .HasColumnType("REAL");
 
+                    b.Property<double>("OffsetX")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<double>("OffsetY")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(0.0);
+
                     b.Property<string>("Origin")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -138,16 +144,6 @@ namespace WoCo.Core.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("REAL")
                         .HasDefaultValue(1.0);
-
-                    b.Property<double>("OffsetX")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("REAL")
-                        .HasDefaultValue(0.0);
-
-                    b.Property<double>("OffsetY")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("REAL")
-                        .HasDefaultValue(0.0);
 
                     b.Property<double>("Width")
                         .HasColumnType("REAL");
