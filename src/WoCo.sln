@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WoCo.Cli", "WoCo.Cli\WoCo.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WoCo.Wpf", "WoCo.Wpf\WoCo.Wpf.csproj", "{7C0157F4-57C5-4510-9C7B-BC2E3CBE4416}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WoCo.Tests", "WoCo.Tests\WoCo.Tests.csproj", "{41781863-513A-429A-7D73-8D629DC1571D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{7C0157F4-57C5-4510-9C7B-BC2E3CBE4416}.Release|x64.Build.0 = Release|Any CPU
 		{7C0157F4-57C5-4510-9C7B-BC2E3CBE4416}.Release|x86.ActiveCfg = Release|Any CPU
 		{7C0157F4-57C5-4510-9C7B-BC2E3CBE4416}.Release|x86.Build.0 = Release|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Debug|x64.Build.0 = Debug|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Debug|x86.Build.0 = Debug|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Release|x64.ActiveCfg = Release|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Release|x64.Build.0 = Release|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Release|x86.ActiveCfg = Release|Any CPU
+		{41781863-513A-429A-7D73-8D629DC1571D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

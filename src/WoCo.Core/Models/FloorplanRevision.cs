@@ -15,8 +15,6 @@ public class FloorplanRevision
     public double Width { get; set; }
     public double Height { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
-
-    // Transformation relative to initial revision (RevisionNumber == 1)
     public double ScaleDenominator { get; set; } = 1.0;
     public double OffsetX { get; set; } = 0.0;
     public double OffsetY { get; set; } = 0.0;

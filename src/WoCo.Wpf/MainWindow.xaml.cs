@@ -37,11 +37,6 @@ public partial class MainWindow : Window
         await _viewModel.InitializeAsync();
     }
 
-    private async void SaveChanges_Click(object sender, RoutedEventArgs e)
-    {
-
-    }
-
     private async void NewProject_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new CreateProjectWindow

@@ -1,107 +1,209 @@
-# WoCo
+# WoCo - Floorplan Annotations Application
 
-A **multi-project solution** for managing and visualizing annotated floorplans with revision history. 
-The solution includes a **WPF desktop application** for interactive visualization and a **CLI tool** for batch importing and database management.
+## Introduction
 
-## Features
+This project is a **proof-of-concept application** developed as part of a technical assignment.
 
-- **Multi-revision support** – Track changes to floorplans over time with automatic revision management
-- **Create projects** – Import floorplan images with annotations and metadata
-- **Persist to SQLite** – Projects, floorplan revisions, annotations, and revision history stored in a local database
-- **Canvas visualization** – WPF application renders floorplans on a scrollable canvas with colored annotations (rectangles, polygons, points)
-- **Coordinate transformation** – Automatic conversion from pixel coordinates to real-world coordinates using scale and offset metadata
-- **CLI batch import** – Command-line tool for importing multiple projects and revisions
-- **Database management** – Purge and inspect database contents via CLI
+The goal is to demonstrate how annotations on a floorplan can be preserved and corrected when the underlying floorplan changes.
 
-## Project Structure
+The solution focuses on:
+- visualizing floorplans and annotations
+- supporting multiple revisions of a floorplan
+- automatically transforming annotation coordinates between revisions
+- allowing manual adjustments of annotations where needed
 
-The solution consists of three projects:
+---
+
+## Overview
+
+This PoC introduces a **revision-based model**:
+
+- Each floorplan update creates a new **Floorplan Revision**
+- Each annotation gets a corresponding **Annotation Revision**
+- New revisions are derived from the **latest known revision**
+- Coordinates are automatically transformed using **scale and offset**
+- Users can manually adjust annotations where needed
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **.NET 10.0 SDK** or later
+- **Visual Studio 2026** or later (for WPF GUI) or any .NET-compatible IDE
+- **SQLite** (included via Entity Framework Core)
+
+### Building the Solution
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/sadnielsen/wocodemo
+   cd wocodemo
+   ```
+
+2. Restore dependencies and build:
+   ```bash
+   cd src
+   dotnet restore
+   dotnet build
+   ```
+
+3. Run database migrations (automatic on first run):
+   ```bash
+   dotnet ef database update --project WoCo.Core
+   ```
+
+### Project Structure
 
 ```
-src/
-├── WoCo.Core/              # Shared core library
-│   ├── DataAccess/         # EF Core DbContext, repositories, configurations
-│   ├── DependencyInjection/# Service registration extensions
-│   ├── Models/             # Domain models (Project, Annotation, FloorplanRevision, AnnotationRevision)
-│   ├── Services/           # Business logic (CreateProjectService, CreateRevisionService, AnnotationParser)
-│   └── Types/              # Enums and value types (CoordinateSystemType, CoordinateOriginType)
-│
-├── WoCo.Wpf/               # WPF desktop application
-│   ├── Controls/           # Custom WPF controls
-│   ├── Converters/         # Value converters for data binding
-│   ├── ViewModels/         # MVVM ViewModels
-│   └── Views/              # XAML views and windows
-│
-└── WoCo.Cli/               # Command-line tool
-    ├── Program.cs          # Main CLI entry point
-    └── appsettings.json    # Configuration (data folder path, logging)
+WoCo/
+├── WoCo.Core/         # Core business logic, data access, and services
+├── WoCo.Cli/          # Command-line interface for data import and management
+├── WoCo.Wpf/          # Windows Presentation Foundation GUI application
+└── WoCo.Tests/        # Unit tests using NUnit
 ```
 
-### Core Architecture
+---
 
-**WoCo.Core** provides the foundation:
+## CLI Usage Guide
 
-| Component | Responsibility |
-|-----------|----------------|
-| **Models** | `Project`, `Annotation`, `FloorplanRevision`, `AnnotationRevision` – EF Core entities |
-| **DataAccess** | `AppDbContext` (EF Core/SQLite), `ProjectRepository`, entity configurations |
-| **Services** | `CreateProjectService` – project creation with initial floorplan<br>`CreateRevisionService` – add new floorplan revisions<br>`AnnotationParser` – parse JSON annotations |
-| **Types** | Enums for coordinate systems (Pixels, RealWorld) and origins (TopLeft, BottomLeft) |
+The **WoCo CLI** (`WoCo.Cli`) is a command-line tool for importing floorplan data, managing the database, and debugging projects.
 
-**WoCo.Wpf** implements MVVM pattern:
+### Running the CLI
 
-| Layer | Components |
-|-------|------------|
-| **View** | `MainWindow` – main application window with project list and canvas<br>`AnnotationCanvas` – custom control for rendering floorplans and annotations |
-| **ViewModel** | ViewModels for managing UI state and commands |
-| **Converters** | Data binding value converters |
-
-**WoCo.Cli** provides command-line interface:
-- Import projects from file system
-- Create multiple revisions from numbered files
-- Purge database contents
-- Dump database for inspection
-
-## CLI Usage
-
-The CLI tool (`WoCo.Cli`) is used for batch operations and database management.
-
-### Build & Run CLI
+Navigate to the CLI directory and run:
 
 ```bash
-cd src/WoCo.Cli
+cd WoCo.Cli
+dotnet build
 dotnet run
 ```
 
-The CLI accepts command-line arguments:
+### CLI Commands
 
-`purge`  
+#### **Database Dump (Default)**
 
-Deletes all data from the database.  
+Running the CLI without arguments performs a database dump showing all projects, revisions, and annotations:
 
-`load=<number>`  
+```bash
+dotnet run
+```
 
-Import data as new project with initial floorplan and annotations, and subsequent revisions.
+---
 
-This imports a project and all its revisions from the data folder. Files should be named:
-- `<number>.0-floorplan.png` – Initial floorplan image
-- `<number>.0-floorplan.json` – Initial floorplan metadata
-- `<number>.0-annotations.json` – Initial annotations
-- `<number>.1-floorplan.png` – Second revision floorplan (optional)
-- `<number>.1-floorplan.json` – Second revision metadata (optional)
-- And so on...
+#### **Purge Database**
 
-Combined arguments:
+Removes all data from the database (Projects, FloorplanRevisions, Annotations, AnnotationRevisions).
 
+```bash
+dotnet run -- purge
+```
+
+**Example:**
+```bash
+cd WoCo.Cli
+dotnet run -- purge
+```
+
+**Output:**
+```
+Database purged successfully.
+=== DATABASE DUMP ===
+=== END ===
+```
+
+---
+
+#### **Import Sample Data**
+
+Imports a project with floorplan(s) and annotations from files in the data directory.
+
+```bash
+dotnet run load=<prefix>
+```
+
+**Expected File Structure:**
+
+For initial project creation, the CLI expects these files in the `TestData` directory (configurable via `appsettings.json`):
+
+```
+TestData/
+├── <prefix>.0-floorplan.png         # Initial floorplan image
+├── <prefix>.0-floorplan.json        # Initial floorplan metadata
+├── <prefix>.0-annotations.json      # Initial annotations data
+├── <prefix>.1-floorplan.png         # Optional: Revision 1 floorplan
+├── <prefix>.1-floorplan.json        # Optional: Revision 1 metadata
+├── <prefix>.2-floorplan.png         # Optional: Revision 2 floorplan
+├── <prefix>.2-floorplan.json        # Optional: Revision 2 metadata
+└── ...
+```
+
+**Floorplan Metadata Format** (`<prefix>.<revision>-floorplan.json`):
+
+```json
+{
+  "scaleDenominator": 100.0,
+  "offsetX": 0.0,
+  "offsetY": 0.0
+}
+```
+
+**Annotations Format** (`<prefix>.0-annotations.json`):
+
+The annotations file should contain annotation data in JSON format. See the `CreateProjectService` for the expected schema.
+
+**Example:**
+```bash
+dotnet run -- load=building1
+```
+
+**Output:**
+```
+Imported project: Sample Project 20260319123045 (a1b2c3d4-...)
+Creating revision 1 from building1.1-floorplan.png
+Created revision 1 for project Sample Project 20260319123045
+Successfully loaded 1 additional revision(s).
+=== DATABASE DUMP ===
+Project: Sample Project 20260319123045 (a1b2c3d4-...)
+  FloorPlanRevision v1
+    Size: 1920 x 1080
+    ScaleDenominator: 100
+    FileName: building1.0-floorplan.png
+    FileType: png
+    FileBytes: 245832
+  FloorPlanRevision v2
+    Size: 1920 x 1080
+    ScaleDenominator: 50
+    FileName: building1.1-floorplan.png
+    FileType: png
+    FileBytes: 248921
+  Annotation: e5f6g7h8-...
+    Rev 1 | Point | (150.5,200.75) | Deleted: False | CreatedAt: 2026-03-19 12:30:45
+    Rev 2 | Point | (160.5,210.75) | Deleted: False | CreatedAt: 2026-03-19 12:30:47
+=== END ===
+```
+
+---
+
+#### 3. **Purge and Load**
+
+Combines both commands to clear the database and load fresh data:
+
+```bash
+dotnet run purge load=<prefix>
+```
+
+**Example:**
 ```bash
 dotnet run purge load=sample
 ```
 
-Purges the database then loads the project with prefix "sample".
+---
 
 ### Configuration
 
-Edit `appsettings.json` to configure the CLI:
+Edit `WoCo.Cli/appsettings.json` to configure:
 
 ```json
 {
@@ -114,61 +216,73 @@ Edit `appsettings.json` to configure the CLI:
 }
 ```
 
-- **DataFolder** – Path to folder containing floorplan images and metadata files (relative or absolute)
+**Settings:**
+- **`DataFolder`**: Path to the directory containing floorplan images and annotation files (relative or absolute)
 
-### Floorplan Metadata Format
+---
 
-Each floorplan requires a JSON metadata file (`<prefix>.<revision>-floorplan.json`):
+## WPF Application
 
-```json
-{
-  "scaleDenominator": 100.0,
-  "offsetX": 0.0,
-  "offsetY": 0.0
-}
-```
-
-## WPF Application Usage
-
-### Build & Run WPF App
+Launch the WPF GUI application:
 
 ```bash
-cd src/WoCo.Wpf
+cd WoCo.Wpf
 dotnet run
 ```
 
-### Features
+The WPF application provides a graphical interface for:
+- Creating and managing projects
+- Viewing and editing floorplan revisions
+- Managing annotations across revisions
+- Visualizing coordinate transformations
 
-- **Project List** – View all imported projects
-- **Canvas Visualization** – Select a project to view floorplan with annotations
-- **Revision Navigation** – Navigate between different revisions of a floorplan
-- **Annotation Display** – Annotations rendered as colored shapes on the canvas
-- **Coordinate Display** – Shows both pixel and real-world coordinates
+---
 
-## Requirements
+## Running Tests
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10)
-- Windows 10 / 11 (WPF is Windows-only)
-
-## Database Location
-
-The SQLite database is stored at:
-```
-%LOCALAPPDATA%\WoCo\woco.db
-```
-
-Or as configured in the connection string in `WoCo.Core\DataAccess\AppDbContextDesignFactory.cs`.
-
-## Development
-
-### Add EF Core Migrations
+Run all tests:
 
 ```bash
-cd src/WoCo.Core
-dotnet ef migrations add <MigrationName> --startup-project ../WoCo.Cli/WoCo.Cli.csproj
+cd WoCo.Tests
+dotnet test
 ```
 
-### Update Database
+---
 
-The database is automatically migrated when running either the WPF app or CLI tool.
+## Architecture
+
+### Core Concepts
+
+1. **Projects**: Top-level containers for floorplans and annotations
+2. **FloorplanRevisions**: Versioned floorplan images with coordinate system metadata
+3. **Annotations**: Geometric shapes (points, rectangles, polygons) placed on floorplans
+4. **AnnotationRevisions**: Versioned annotation data that automatically transforms across floorplan changes
+
+### Key Services
+
+- **`CreateProjectService`**: Creates new projects with initial floorplan and annotations
+- **`CreateRevisionService`**: Creates new floorplan revisions and auto-transforms existing annotations
+- **`ProjectRepository`**: Data access layer for persisting and retrieving projects
+
+### Coordinate Transformation
+
+When creating a new floorplan revision, annotations are automatically transformed based on:
+- **Scale changes**: Adjusts coordinates when the scale denominator changes
+- **Offsets**: Applies X/Y offsets for realignment
+- **Preservation**: Maintains deleted annotation states across revisions
+
+---
+
+## Database
+
+WoCo uses **SQLite** with Entity Framework Core for data persistence.
+
+**Default location**: `%LOCALAPPDATA%\WoCo\app.db`
+
+To view or modify the database:
+- Use the CLI's database dump feature
+- Use SQLite tools like [DB Browser for SQLite](https://sqlitebrowser.org/)
+- Query via Entity Framework Core in code
+
+---
 
