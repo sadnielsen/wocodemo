@@ -1,5 +1,11 @@
 # WoCo - Floorplan Annotations Application
 
+> **ARCHIVED REPOSITORY**  
+> This repository has been archived. The assignment was presented to the team and achieved very positive feedback.  
+> The code is preserved for reference purposes and is no longer actively maintained.
+
+---
+
 ## Introduction
 
 This project is a **proof-of-concept application** developed as part of a technical assignment.
